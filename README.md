@@ -2,7 +2,7 @@
 
 An automated trading system for gold (XAUUSD) using MetaTrader5 API with risk/reward ratio management.
 
-**I trade Gold only for LONG**, so in this code, I will focus to LONG, not SHORT for gold.
+**I trade Gold only for LONG**, so in this code, I will focus to LONG, not SHORT for gold. 
 
 ## 🚀 Features
 
