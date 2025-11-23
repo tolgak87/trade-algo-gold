@@ -6,15 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
  
 ---
 
-## [Unreleased]
+## [Released]
 
 ### 🔮 Planned for v1.0
-- [ ] **MT5 Integration**: Full MetaTrader5 connection and authentication
-- [ ] **Account Data Collection**: Comprehensive account metrics gathering
-- [ ] **Multi-Symbol Support**: Auto-detection of gold symbols (XAUUSD, XAUUSD., XAUUSD.m, GOLD, GOLD.)
-- [ ] **Order Execution**: BUY orders with configurable parameters
-- [ ] **Risk Management**: Automatic Stop Loss and Take Profit calculation
-- [ ] **Trade Logging**: JSON-based trade history logging system
+- **MT5 Integration**: Full MetaTrader5 connection and authentication
+- **Account Data Collection**: Comprehensive account metrics gathering
+- **Multi-Symbol Support**: Auto-detection of gold symbols (XAUUSD, XAUUSD., XAUUSD.m, GOLD, GOLD.)
+- **Order Execution**: BUY orders with configurable parameters
+- **Risk Management**: Automatic Stop Loss and Take Profit calculation
+- **Trade Logging**: JSON-based trade history logging system
+
+
+## [Unreleased]
 
 ### 🚀 Planned for v1.1
 - [ ] **Parabolic SAR Indicator**: Implementation of Parabolic SAR (Stop and Reverse) technical indicator with 15-minute timeframe data analysis

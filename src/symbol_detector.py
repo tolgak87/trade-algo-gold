@@ -30,8 +30,6 @@ class SymbolDetector:
             print(f"MT5 initialization failed, error code = {mt5.last_error()}")
             return None
         
-        print("Detecting available gold symbols...")
-        
         # Get all available symbols
         all_symbols = mt5.symbols_get()
         if all_symbols is None:
@@ -46,7 +44,6 @@ class SymbolDetector:
         for gold_symbol in self.GOLD_SYMBOLS:
             if gold_symbol in available_symbol_names:
                 self.available_symbols.append(gold_symbol)
-                print(f"✓ Found: {gold_symbol}")
         
         if not self.available_symbols:
             print("❌ No gold symbols found in your MT5 account")
@@ -56,9 +53,6 @@ class SymbolDetector:
         # Select the first available symbol as default
         self.detected_symbol = self.available_symbols[0]
         
-        print(f"\n📊 Available gold symbols: {', '.join(self.available_symbols)}")
-        print(f"🎯 Selected symbol: {self.detected_symbol}")
-        
         # Enable the symbol for trading
         if not mt5.symbol_select(self.detected_symbol, True):
             print(f"Failed to select symbol {self.detected_symbol}")
@@ -67,16 +61,6 @@ class SymbolDetector:
         
         # Get symbol info
         symbol_info = mt5.symbol_info(self.detected_symbol)
-        if symbol_info is not None:
-            print(f"\n📈 Symbol Information:")
-            print(f"   Bid: {symbol_info.bid}")
-            print(f"   Ask: {symbol_info.ask}")
-            print(f"   Spread: {symbol_info.spread}")
-            print(f"   Digits: {symbol_info.digits}")
-            print(f"   Point: {symbol_info.point}")
-            print(f"   Min Lot: {symbol_info.volume_min}")
-            print(f"   Max Lot: {symbol_info.volume_max}")
-            print(f"   Lot Step: {symbol_info.volume_step}")
         
         return self.detected_symbol
     

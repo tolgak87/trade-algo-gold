@@ -43,16 +43,13 @@ def main():
     # Step 3: Initialize Trade Logger
     print("\n[3/5] Initializing trade logging system...")
     trade_logger = TradeLogger(log_directory="trade_logs")
-    print("✅ Trade logging enabled - Daily JSON files")
     
     # Show today's statistics
     stats = trade_logger.get_trade_statistics()
-    print(f"📊 Today's Stats: {stats['total_trades']} trades | Win Rate: {stats['win_rate']}%")
     
     # Step 4: Initialize Risk Management (1:2 ratio)
     print("\n[4/5] Initializing risk management...")
     risk_manager = RiskManager(gold_symbol, risk_reward_ratio=2.0)
-    print("✅ Risk-Reward Ratio: 1:2")
     
     # Step 5: Execute BUY order with automatic SL/TP (optional - uncomment to activate)
     print("\n[5/5] Order execution ready...")
@@ -125,13 +122,34 @@ def main():
         print(f"\n❌ Order failed: {result.get('error')}")
     """
     
+    # Get symbol info for display
+    if not mt5.initialize():
+        symbol_info = None
+    else:
+        symbol_info = mt5.symbol_info(gold_symbol)
+        mt5.shutdown()
+    
     print("\n" + "=" * 60)
     print("✅ Bot Ready!")
     print(f"📊 Trading Symbol: {gold_symbol}")
     print(f"💰 Account Balance: ${account_balance}")
     print(f"⚖️  Risk Management: Active (1:2)")
     print(f"📝 Trade Logging: Enabled (trade_logs/)")
-    print("💡 Uncomment order execution code to start trading")
+    print(f"📊 Today's Stats: {stats['total_trades']} trades | Win Rate: {stats['win_rate']}%")
+    
+    # Display symbol information
+    if symbol_info is not None:
+        print(f"\n📈 Symbol Information:")
+        print(f"   Bid: {symbol_info.bid}")
+        print(f"   Ask: {symbol_info.ask}")
+        print(f"   Spread: {symbol_info.spread}")
+        print(f"   Digits: {symbol_info.digits}")
+        print(f"   Point: {symbol_info.point}")
+        print(f"   Min Lot: {symbol_info.volume_min}")
+        print(f"   Max Lot: {symbol_info.volume_max}")
+        print(f"   Lot Step: {symbol_info.volume_step}")
+    
+    print("\n💡 Uncomment order execution code to start trading")
     print("=" * 60)
 
 if __name__ == "__main__":

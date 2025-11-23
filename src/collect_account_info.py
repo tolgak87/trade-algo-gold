@@ -11,8 +11,6 @@ def collect_account_info():
         print(f"initialize() failed, error code = {mt5.last_error()}")
         return False
     
-    print("MT5 initialized successfully")
-    
     # Get account info
     info = mt5.account_info()
     
@@ -42,15 +40,6 @@ def collect_account_info():
     try:
         with open('account_info.json', 'w', encoding='utf-8') as f:
             json.dump(account_data, f, indent=4, ensure_ascii=False)
-        print("Account information saved to account_info.json")
-        print(f"\nAccount Summary:")
-        print(f"Login: {account_data['login']}")
-        print(f"Server: {account_data['server']}")
-        print(f"Balance: {account_data['balance']} {account_data['currency']}")
-        print(f"Equity: {account_data['equity']} {account_data['currency']}")
-        print(f"Profit: {account_data['profit']} {account_data['currency']}")
-        print(f"Margin Free: {account_data['margin_free']} {account_data['currency']}")
-        print(f"Leverage: 1:{account_data['leverage']}")
         
     except Exception as e:
         print(f"Error saving account info: {e}")
@@ -59,7 +48,6 @@ def collect_account_info():
     
     # Shutdown MT5 connection
     mt5.shutdown()
-    print("\nMT5 connection closed")
     return True
 
 if __name__ == "__main__":
