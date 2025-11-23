@@ -1,3 +1,5 @@
 demo.txt
 /logs/
 account_info.json
+/src/__pycache__/
+/trade_logs/
