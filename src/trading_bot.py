@@ -1,5 +1,6 @@
 import MetaTrader5 as mt5
 import json
+import time
 from datetime import datetime
 from typing import Optional, Dict
 
@@ -294,3 +295,98 @@ class TradingBot:
         self._load_symbol_info()
         self.stats = self.trade_logger.get_trade_statistics()
         print("✅ Data refreshed")
+    
+    def wait_for_signal(self, desired_signal: str = 'BUY', 
+                       check_interval: int = 30,
+                       max_wait_minutes: int = 0) -> bool:
+        """
+        Wait for a specific trading signal
+        
+        Args:
+            desired_signal: 'BUY' or 'SELL' signal to wait for
+            check_interval: Seconds between checks (default: 30)
+            max_wait_minutes: Maximum minutes to wait (0 = infinite)
+            
+        Returns:
+            True if signal received, False if timeout
+        """
+        print(f"\n⏳ Waiting for {desired_signal} signal...")
+        print(f"   Check interval: {check_interval} seconds")
+        if max_wait_minutes > 0:
+            print(f"   Max wait time: {max_wait_minutes} minutes")
+        else:
+            print(f"   Max wait time: Unlimited (Ctrl+C to stop)")
+        
+        start_time = time.time()
+        check_count = 0
+        
+        try:
+            while True:
+                check_count += 1
+                
+                # Refresh SAR data
+                self.sar_info = self.sar.get_current_sar()
+                current_signal = self.get_sar_signal()
+                
+                if current_signal:
+                    timestamp = datetime.now().strftime("%H:%M:%S")
+                    
+                    if current_signal == desired_signal:
+                        print(f"\n✅ [{timestamp}] {desired_signal} signal received!")
+                        print(f"   Symbol: {self.symbol}")
+                        print(f"   Current Price: {self.sar_info['current_price']}")
+                        print(f"   SAR Value (Stop Loss): {self.sar_info['sar_value']}")
+                        print(f"   Trend: {self.sar_info['trend']}")
+                        print(f"   Total checks: {check_count}")
+                        return True
+                    else:
+                        # Display detailed info while waiting
+                        print(f"\n⏳ [{timestamp}] Check #{check_count}: Current signal is {current_signal} (waiting for {desired_signal})")
+                        print(f"   📊 Symbol: {self.symbol}")
+                        print(f"   💰 Current Price: {self.sar_info['current_price']}")
+                        print(f"   🔮 SAR Value: {self.sar_info['sar_value']}")
+                        print(f"   📈 Trend: {self.sar_info['trend']}")
+                        print(f"   📍 Distance: {self.sar_info['distance_to_sar']} ({self.sar_info['distance_percentage']}%)")
+                else:
+                    print(f"⚠️  Check #{check_count}: Unable to get SAR signal")
+                
+                # Check timeout
+                if max_wait_minutes > 0:
+                    elapsed_minutes = (time.time() - start_time) / 60
+                    if elapsed_minutes >= max_wait_minutes:
+                        print(f"\n⏰ Timeout: {max_wait_minutes} minutes elapsed without {desired_signal} signal")
+                        return False
+                
+                # Wait before next check
+                time.sleep(check_interval)
+                
+        except KeyboardInterrupt:
+            print(f"\n\n⚠️  Monitoring stopped by user")
+            print(f"   Total checks performed: {check_count}")
+            return False
+    
+    def auto_trade_on_signal(self, desired_signal: str = 'BUY',
+                            risk_percentage: float = 1.0,
+                            use_sar_sl: bool = True,
+                            check_interval: int = 30,
+                            max_wait_minutes: int = 0) -> Optional[Dict]:
+        """
+        Wait for signal and automatically execute trade
+        
+        Args:
+            desired_signal: 'BUY' or 'SELL' signal to wait for
+            risk_percentage: Percentage of account to risk
+            use_sar_sl: Use SAR-based stop loss
+            check_interval: Seconds between checks (default: 30)
+            max_wait_minutes: Maximum minutes to wait (0 = infinite)
+            
+        Returns:
+            Trade result dictionary or None if timeout
+        """
+        # Wait for signal
+        if self.wait_for_signal(desired_signal, check_interval, max_wait_minutes):
+            print(f"\n🚀 Executing {desired_signal} trade...")
+            return self.execute_trade(desired_signal, risk_percentage, use_sar_sl)
+        else:
+            print(f"❌ No trade executed - signal not received")
+            return None

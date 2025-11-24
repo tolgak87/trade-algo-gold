@@ -15,34 +15,15 @@ def main():
     # Display bot status
     bot.display_status()
     
-    # ⚠️ CAUTION: Uncomment below to place REAL orders
-    """
-    # Example 1: Execute BUY order with SAR-based Stop Loss
-    result = bot.execute_trade(
-        position_type='BUY',
+    # Wait for BUY signal and auto-trade (30 second checks, unlimited wait)
+    result = bot.auto_trade_on_signal(
+        desired_signal='BUY',
         risk_percentage=1.0,
-        use_sar_sl=True
+        use_sar_sl=True,
+        check_interval=30,
+        max_wait_minutes=0  # 0 = unlimited (Ctrl+C to stop)
     )
     
-    # Example 2: Execute SELL order with standard Stop Loss
-    # result = bot.execute_trade(
-    #     position_type='SELL',
-    #     risk_percentage=1.0,
-    #     use_sar_sl=False
-    # )
-    
-    # Example 3: Get current SAR signal
-    # signal = bot.get_sar_signal()
-    # if signal == 'BUY':
-    #     bot.execute_trade('BUY', risk_percentage=1.0, use_sar_sl=True)
-    # elif signal == 'SELL':
-    #     bot.execute_trade('SELL', risk_percentage=1.0, use_sar_sl=True)
-    
-    # Example 4: Refresh data and check again
-    # bot.refresh_data()
-    # bot.display_status()
-    """
-
 
 if __name__ == "__main__":
     main()
