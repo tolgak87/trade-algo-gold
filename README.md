@@ -16,6 +16,11 @@ An automated trading system for gold (XAUUSD) using MetaTrader5 API with risk/re
 pip install MetaTrader5
 ```
 
+**Other Modules**
+```bash
+pip install pandas
+```
+
 ## 🛠️ Installation
 
 1. **Install MetaTrader5 on Windows**
