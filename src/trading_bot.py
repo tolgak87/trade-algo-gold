@@ -223,7 +223,7 @@ class TradingBot:
             if sar_sl is None:
                 return {"success": False, "error": "Failed to get SAR-based Stop Loss"}
             
-            sl, tp = self.risk_manager.calculate_sl_tp_by_price(entry_price, sar_sl)
+            sl, tp = self.risk_manager.calculate_sl_tp_by_price(entry_price, sar_sl, position_type)
         else:
             # Use default points-based Stop Loss
             sl, tp = self.risk_manager.calculate_sl_tp_by_points(entry_price, 50)
@@ -463,6 +463,7 @@ class TradingBot:
     
     def monitor_position(self, position_ticket: int, 
                         stop_loss: float,
+                        take_profit: float,
                         position_type: str = 'BUY',
                         check_interval: int = 5) -> Dict:
         """
@@ -471,6 +472,7 @@ class TradingBot:
         Args:
             position_ticket: Position ticket number to monitor
             stop_loss: Original stop loss price
+            take_profit: Original take profit price
             position_type: 'BUY' or 'SELL'
             check_interval: Seconds between checks (default: 5)
             
@@ -480,6 +482,7 @@ class TradingBot:
         print(f"\n🔍 Monitoring position {position_ticket}...")
         print(f"   Position Type: {position_type}")
         print(f"   Stop Loss: {stop_loss}")
+        print(f"   Take Profit: {take_profit}")
         print(f"   Check interval: {check_interval} seconds")
         print(f"   Monitoring: SAR reversal + Emergency SL break")
         
@@ -590,7 +593,7 @@ class TradingBot:
                     profit_loss = current_position.profit if current_position else 0
                     print(f"\n📊 [{timestamp}] Monitor Check #{check_count}")
                     print(f"   Price: {current_price} | SAR: {self.sar_info['sar_value']} | Signal: {current_signal}")
-                    print(f"   P&L: ${profit_loss:.2f} | SL: {stop_loss}")
+                    print(f"   P&L: ${profit_loss:.2f} | SL: {stop_loss} | TP: {take_profit}")
                 
                 # Wait before next check
                 time.sleep(check_interval)
@@ -654,16 +657,19 @@ class TradingBot:
                 # Get position details
                 position_ticket = result.get("order_id")
                 stop_loss = result["risk_info"]["stop_loss"]
+                take_profit = result["risk_info"]["take_profit"]
                 
                 print(f"\n✅ Trade opened successfully!")
                 print(f"   Ticket: {position_ticket}")
                 print(f"   Stop Loss: {stop_loss}")
+                print(f"   Take Profit: {take_profit}")
                 
                 # Phase 3: Monitor position
                 print(f"\n🛡️ PHASE 3: Monitoring position {position_ticket}...")
                 monitor_result = self.monitor_position(
                     position_ticket=position_ticket,
                     stop_loss=stop_loss,
+                    take_profit=take_profit,
                     position_type=desired_signal,
                     check_interval=position_check_interval
                 )

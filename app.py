@@ -16,9 +16,9 @@ def main():
     bot.display_status()
     
     # FULL AUTO-TRADING CYCLE
-    # Continuously: Wait for BUY signal → Trade → Monitor (SAR+Emergency SL) → Repeat
+    # Change 'BUY' to 'SELL' for short positions when market is downtrend
     bot.full_auto_trading_cycle(
-        desired_signal='BUY',
+        desired_signal='SELL',         # 'BUY' for long | 'SELL' for short
         risk_percentage=1.0,
         signal_check_interval=30,      # Check for signals every 30s
         position_check_interval=5      # Monitor position every 5s

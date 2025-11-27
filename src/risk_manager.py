@@ -71,14 +71,11 @@ class RiskManager:
         Args:
             entry_price: Entry price for the trade
             stop_loss_price: Desired stop loss price
-            order_type: "BUY" or "SELL" (currently only BUY supported)
+            order_type: "BUY" or "SELL"
             
         Returns:
             Tuple[float, float]: (stop_loss_price, take_profit_price)
         """
-        if order_type.upper() != "BUY":
-            raise ValueError("Only BUY orders are supported")
-        
         # Get symbol info for proper rounding
         if not mt5.initialize():
             raise Exception("MT5 initialization failed")
@@ -91,15 +88,27 @@ class RiskManager:
         digits = symbol_info.digits
         mt5.shutdown()
         
-        # Calculate risk (distance from entry to SL)
-        risk_distance = entry_price - stop_loss_price
-        
-        if risk_distance <= 0:
-            raise ValueError("Stop Loss must be below entry price for BUY orders")
-        
-        # Calculate TP based on risk-reward ratio
-        reward_distance = risk_distance * self.risk_reward_ratio
-        take_profit = round(entry_price + reward_distance, digits)
+        if order_type.upper() == "BUY":
+            # For BUY: SL below entry, TP above entry
+            risk_distance = entry_price - stop_loss_price
+            
+            if risk_distance <= 0:
+                raise ValueError("Stop Loss must be below entry price for BUY orders")
+            
+            # Calculate TP based on risk-reward ratio
+            reward_distance = risk_distance * self.risk_reward_ratio
+            take_profit = round(entry_price + reward_distance, digits)
+            
+        else:  # SELL
+            # For SELL: SL above entry, TP below entry
+            risk_distance = stop_loss_price - entry_price
+            
+            if risk_distance <= 0:
+                raise ValueError("Stop Loss must be above entry price for SELL orders")
+            
+            # Calculate TP based on risk-reward ratio
+            reward_distance = risk_distance * self.risk_reward_ratio
+            take_profit = round(entry_price - reward_distance, digits)
         
         return stop_loss_price, take_profit
     
