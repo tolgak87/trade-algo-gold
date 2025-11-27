@@ -390,3 +390,293 @@ class TradingBot:
         else:
             print(f"❌ No trade executed - signal not received")
             return None
+    
+    def get_open_positions(self) -> list:
+        """
+        Get all open positions for the current symbol
+        
+        Returns:
+            List of open position objects
+        """
+        if not mt5.initialize():
+            return []
+        
+        positions = mt5.positions_get(symbol=self.symbol)
+        mt5.shutdown()
+        
+        return list(positions) if positions else []
+    
+    def close_position(self, position_ticket: int) -> bool:
+        """
+        Close a specific position by ticket
+        
+        Args:
+            position_ticket: Position ticket number
+            
+        Returns:
+            True if successfully closed, False otherwise
+        """
+        if not mt5.initialize():
+            print("❌ Failed to initialize MT5")
+            return False
+        
+        position = mt5.positions_get(ticket=position_ticket)
+        if not position:
+            print(f"❌ Position {position_ticket} not found")
+            mt5.shutdown()
+            return False
+        
+        position = position[0]
+        
+        # Determine order type (opposite of position)
+        if position.type == mt5.POSITION_TYPE_BUY:
+            order_type = mt5.ORDER_TYPE_SELL
+            price = mt5.symbol_info_tick(self.symbol).bid
+        else:
+            order_type = mt5.ORDER_TYPE_BUY
+            price = mt5.symbol_info_tick(self.symbol).ask
+        
+        # Create close request
+        request = {
+            "action": mt5.TRADE_ACTION_DEAL,
+            "symbol": self.symbol,
+            "volume": position.volume,
+            "type": order_type,
+            "position": position_ticket,
+            "price": price,
+            "deviation": 20,
+            "magic": 234000,
+            "comment": "Emergency close by bot",
+            "type_time": mt5.ORDER_TIME_GTC,
+            "type_filling": mt5.ORDER_FILLING_IOC,
+        }
+        
+        result = mt5.order_send(request)
+        mt5.shutdown()
+        
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            print(f"✅ Position {position_ticket} closed successfully")
+            return True
+        else:
+            print(f"❌ Failed to close position {position_ticket}: {result.comment}")
+            return False
+    
+    def monitor_position(self, position_ticket: int, 
+                        stop_loss: float,
+                        position_type: str = 'BUY',
+                        check_interval: int = 5) -> Dict:
+        """
+        Monitor an open position with emergency stop loss protection
+        
+        Args:
+            position_ticket: Position ticket number to monitor
+            stop_loss: Original stop loss price
+            position_type: 'BUY' or 'SELL'
+            check_interval: Seconds between checks (default: 5)
+            
+        Returns:
+            Dictionary with close reason and details
+        """
+        print(f"\n🔍 Monitoring position {position_ticket}...")
+        print(f"   Position Type: {position_type}")
+        print(f"   Stop Loss: {stop_loss}")
+        print(f"   Check interval: {check_interval} seconds")
+        print(f"   Monitoring: SAR reversal + Emergency SL break")
+        
+        check_count = 0
+        
+        try:
+            while True:
+                check_count += 1
+                
+                # Check if position still exists
+                positions = self.get_open_positions()
+                position_exists = any(p.ticket == position_ticket for p in positions)
+                
+                if not position_exists:
+                    return {
+                        "closed": True,
+                        "reason": "Position closed by MT5 (SL/TP hit or manual)",
+                        "checks": check_count
+                    }
+                
+                # Get current position details
+                current_position = next((p for p in positions if p.ticket == position_ticket), None)
+                
+                # Refresh SAR data
+                self.sar_info = self.sar.get_current_sar()
+                current_signal = self.get_sar_signal()
+                
+                # Get current price
+                if not mt5.initialize():
+                    continue
+                tick = mt5.symbol_info_tick(self.symbol)
+                mt5.shutdown()
+                
+                if not tick:
+                    continue
+                
+                current_price = tick.bid if position_type == 'BUY' else tick.ask
+                timestamp = datetime.now().strftime("%H:%M:%S")
+                
+                # Check 1: SAR Reversal
+                sar_reversed = False
+                if position_type == 'BUY' and current_signal == 'SELL':
+                    sar_reversed = True
+                    print(f"\n⚠️  [{timestamp}] SAR REVERSAL DETECTED!")
+                    print(f"   Position: {position_type} | New Signal: {current_signal}")
+                    print(f"   Closing position for safety...")
+                    
+                    if self.close_position(position_ticket):
+                        return {
+                            "closed": True,
+                            "reason": "SAR reversal (UPTREND → DOWNTREND)",
+                            "price": current_price,
+                            "sar_value": self.sar_info['sar_value'],
+                            "checks": check_count
+                        }
+                
+                elif position_type == 'SELL' and current_signal == 'BUY':
+                    sar_reversed = True
+                    print(f"\n⚠️  [{timestamp}] SAR REVERSAL DETECTED!")
+                    print(f"   Position: {position_type} | New Signal: {current_signal}")
+                    print(f"   Closing position for safety...")
+                    
+                    if self.close_position(position_ticket):
+                        return {
+                            "closed": True,
+                            "reason": "SAR reversal (DOWNTREND → UPTREND)",
+                            "price": current_price,
+                            "sar_value": self.sar_info['sar_value'],
+                            "checks": check_count
+                        }
+                
+                # Check 2: Emergency Stop Loss (price broke SL but order didn't trigger)
+                emergency_sl_hit = False
+                if position_type == 'BUY' and current_price < stop_loss:
+                    emergency_sl_hit = True
+                    print(f"\n🚨 [{timestamp}] EMERGENCY STOP LOSS!")
+                    print(f"   Current Price: {current_price} < Stop Loss: {stop_loss}")
+                    print(f"   MT5 SL didn't trigger - Force closing position!")
+                    
+                    if self.close_position(position_ticket):
+                        return {
+                            "closed": True,
+                            "reason": "Emergency Stop Loss (price below SL)",
+                            "price": current_price,
+                            "stop_loss": stop_loss,
+                            "slippage": abs(current_price - stop_loss),
+                            "checks": check_count
+                        }
+                
+                elif position_type == 'SELL' and current_price > stop_loss:
+                    emergency_sl_hit = True
+                    print(f"\n🚨 [{timestamp}] EMERGENCY STOP LOSS!")
+                    print(f"   Current Price: {current_price} > Stop Loss: {stop_loss}")
+                    print(f"   MT5 SL didn't trigger - Force closing position!")
+                    
+                    if self.close_position(position_ticket):
+                        return {
+                            "closed": True,
+                            "reason": "Emergency Stop Loss (price above SL)",
+                            "price": current_price,
+                            "stop_loss": stop_loss,
+                            "slippage": abs(current_price - stop_loss),
+                            "checks": check_count
+                        }
+                
+                # Display monitoring status
+                if check_count % 6 == 1:  # Every ~30 seconds (if check_interval=5)
+                    profit_loss = current_position.profit if current_position else 0
+                    print(f"\n📊 [{timestamp}] Monitor Check #{check_count}")
+                    print(f"   Price: {current_price} | SAR: {self.sar_info['sar_value']} | Signal: {current_signal}")
+                    print(f"   P&L: ${profit_loss:.2f} | SL: {stop_loss}")
+                
+                # Wait before next check
+                time.sleep(check_interval)
+                
+        except KeyboardInterrupt:
+            print(f"\n\n⚠️  Position monitoring stopped by user")
+            print(f"   Position {position_ticket} is still OPEN!")
+            print(f"   Total checks: {check_count}")
+            return {
+                "closed": False,
+                "reason": "Monitoring stopped by user",
+                "checks": check_count
+            }
+    
+    def full_auto_trading_cycle(self, desired_signal: str = 'BUY',
+                                risk_percentage: float = 1.0,
+                                signal_check_interval: int = 30,
+                                position_check_interval: int = 5) -> Dict:
+        """
+        Complete automated trading cycle:
+        1. Wait for signal
+        2. Execute trade
+        3. Monitor position (SAR reversal + emergency SL)
+        4. Repeat
+        
+        Args:
+            desired_signal: 'BUY' or 'SELL' signal to wait for
+            risk_percentage: Percentage of account to risk
+            signal_check_interval: Seconds between signal checks (default: 30)
+            position_check_interval: Seconds between position checks (default: 5)
+            
+        Returns:
+            Final cycle result dictionary
+        """
+        print("\n" + "=" * 60)
+        print("🤖 FULL AUTO-TRADING CYCLE STARTED")
+        print("=" * 60)
+        print(f"   Signal: {desired_signal}")
+        print(f"   Risk: {risk_percentage}% of account")
+        print(f"   SAR-based Stop Loss: Enabled")
+        print(f"   Emergency SL Protection: Enabled")
+        print(f"   Signal Check: Every {signal_check_interval}s")
+        print(f"   Position Check: Every {position_check_interval}s")
+        print("=" * 60)
+        
+        try:
+            while True:
+                # Phase 1: Wait for signal
+                print(f"\n🔍 PHASE 1: Waiting for {desired_signal} signal...")
+                if not self.wait_for_signal(desired_signal, signal_check_interval):
+                    break
+                
+                # Phase 2: Execute trade
+                print(f"\n💰 PHASE 2: Executing {desired_signal} trade...")
+                result = self.execute_trade(desired_signal, risk_percentage, use_sar_sl=True)
+                
+                if not result["success"]:
+                    print(f"❌ Trade execution failed: {result.get('error')}")
+                    continue
+                
+                # Get position details
+                position_ticket = result.get("order_id")
+                stop_loss = result["risk_info"]["stop_loss"]
+                
+                print(f"\n✅ Trade opened successfully!")
+                print(f"   Ticket: {position_ticket}")
+                print(f"   Stop Loss: {stop_loss}")
+                
+                # Phase 3: Monitor position
+                print(f"\n🛡️ PHASE 3: Monitoring position {position_ticket}...")
+                monitor_result = self.monitor_position(
+                    position_ticket=position_ticket,
+                    stop_loss=stop_loss,
+                    position_type=desired_signal,
+                    check_interval=position_check_interval
+                )
+                
+                print(f"\n📊 Position closed: {monitor_result['reason']}")
+                print(f"   Total monitoring checks: {monitor_result['checks']}")
+                
+                # Phase 4: Prepare for next cycle
+                print(f"\n🔄 Cycle complete. Restarting signal detection...\n")
+                time.sleep(5)  # Brief pause before next cycle
+                
+        except KeyboardInterrupt:
+            print(f"\n\n⚠️  Full auto-trading cycle stopped by user")
+            return {"stopped": True, "reason": "User interrupted"}
+        
+        return {"stopped": True, "reason": "Cycle ended"}

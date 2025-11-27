@@ -15,13 +15,13 @@ def main():
     # Display bot status
     bot.display_status()
     
-    # Wait for BUY signal and auto-trade (30 second checks, unlimited wait)
-    result = bot.auto_trade_on_signal(
+    # FULL AUTO-TRADING CYCLE
+    # Continuously: Wait for BUY signal → Trade → Monitor (SAR+Emergency SL) → Repeat
+    bot.full_auto_trading_cycle(
         desired_signal='BUY',
         risk_percentage=1.0,
-        use_sar_sl=True,
-        check_interval=30,
-        max_wait_minutes=0  # 0 = unlimited (Ctrl+C to stop)
+        signal_check_interval=30,      # Check for signals every 30s
+        position_check_interval=5      # Monitor position every 5s
     )
     
 
