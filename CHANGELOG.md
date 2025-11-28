@@ -24,40 +24,40 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Open Position**: Either open LONG/SHORT position
 - **Trail Stop Loss**: Increase the Stop-loss price by trail for price rises (It will not decrase the stop-loss price)
 - **Close Position if SL passed**: Close position for sudden decreases and stop loss not worked
+- **Automated Trading Loop**: Continuous trading bot operation, even the position closed manually, code will check for new opportunity
 
 ## [Unreleased]
 
-### 🔧 Planned for v1.2
-- [ ] **Strategy Engine**: Multiple trading strategy support
-- [ ] **Backtesting Module**: Historical data testing capability
-- [ ] **Performance Analytics**: Win/loss ratio, profit factor calculations
-- [ ] **Position Management**: Partial close, break-even, trailing features
-
-### 🤖 Planned for v1.3
-- [ ] **Automated Trading Loop**: Continuous trading bot operation
-- [ ] **Circuit Breaker System**: Automatic trading pause conditions:
-  - Stop trading for 1 hour if last 5 consecutive trades are losses
-  - Stop trading for 1 hour if 70% of last 10 trades failed
-- [ ] **Daily Loss Limit**: Configurable maximum daily loss protection
-- [ ] **Trading Hours Control**: Specific time window restrictions
-
-### 📱 Planned for v1.4
+### 📱 Planned for v1.2
+- [ ] **Web Dashboard**: Real-time monitoring interface
 - [ ] **Telegram Integration**: Real-time trade notifications via Telegram
 - [ ] **Email Notifications**: Trade alerts and daily reports via email
 - [ ] **Discord Webhook**: Optional Discord integration for trade updates
 - [ ] **Custom Alert Rules**: Configurable notification triggers
 
-### 🌐 Planned for v1.5
-- [ ] **Web Dashboard**: Real-time monitoring interface
-- [ ] **Price Feed**: Live market price retrieval
-- [ ] **Multiple Asset Support**: Extend beyond gold to forex pairs
-- [ ] **AI/ML Integration**: Machine learning-based signal generation
-- [ ] **Cloud Deployment**: Docker containerization and cloud hosting support
 
-### � Planned for v1.6
+### 🤖 Planned for v1.
+- [ ] **Circuit Breaker System**: Automatic trading pause conditions:
+  - Stop trading for 1 hour if last 5 consecutive trades are losses
+  - Stop trading for 1 hour if 70% of last 10 trades failed
+- [ ] **Daily Loss Limit**: Configurable maximum daily loss protection
+
+
+### � Planned for v1.
 - [ ] **MOST Indicator Integration**: Implementation of MOST (Moving Stop Loss) indicator for dynamic trend analysis
 - [ ] **Multi-Indicator Strategy**: Combined signal generation using both MOST and Parabolic SAR indicators for enhanced trade accuracy
 - [ ] **Indicator Confirmation System**: Trade execution only when both indicators align (consensus-based trading)
+
+### 🔧 Planned for v1.
+- [ ] **Keep Time of Position**: Keep time of a opened position in a log
+- [ ] **Performance Analytics**: Win/loss ratio, profit factor calculations
+- [ ] **Daily Revenue/Loss Limit**: After a big win/loss with a limit, exit from python code
+- [ ] **Collect data and create a solution**: Current TP/SL is a set price. Keep track the price and give a solution for better prices for TP/SL from historical data (keep historical data)
+
+### 🔧 Planned for v1.
+- [ ] **Multiple Asset Support**: Extend beyond gold to forex pairs
+- [ ] **AI/ML Integration**: Machine learning-based signal generation
+- [ ] **Cloud Deployment**: Docker containerization and cloud hosting support
 
 
 ---
