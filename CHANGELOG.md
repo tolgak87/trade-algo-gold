@@ -16,13 +16,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Risk Management**: Automatic Stop Loss and Take Profit calculation
 - **Trade Logging**: JSON-based trade history logging system
 
+### 🚀 Planned for v1.1
+- **Parabolic SAR Indicator**: Implementation of Parabolic SAR (Stop and Reverse) technical indicator with 15-minute timeframe data analysis
+- **Dynamic Stop Loss Based on SAR**: Automatic Stop Loss placement at Parabolic SAR value position for adaptive risk management
+- **Emergency Stop Loss Monitor**: Automatic position closure if price breaks SL level but SL order hasn't triggered (protection against slippage and sudden price gaps)
+- **Monitor SAR**: Clsoe position if SAR turns to DOWNTREND
+- **Open Position**: Either open LONG/SHORT position
+- **Trail Stop Loss**: Increase the Stop-loss price by trail for price rises (It will not decrase the stop-loss price)
+- **Close Position if SL passed**: Close position for sudden decreases and stop loss not worked
 
 ## [Unreleased]
-
-### 🚀 Planned for v1.1
-- [ ] **Parabolic SAR Indicator**: Implementation of Parabolic SAR (Stop and Reverse) technical indicator with 15-minute timeframe data analysis
-- [ ] **Dynamic Stop Loss Based on SAR**: Automatic Stop Loss placement at Parabolic SAR value position for adaptive risk management
-- [ ] **Emergency Stop Loss Monitor**: Automatic position closure if price breaks SL level but SL order hasn't triggered (protection against slippage and sudden price gaps)
 
 ### 🔧 Planned for v1.2
 - [ ] **Strategy Engine**: Multiple trading strategy support

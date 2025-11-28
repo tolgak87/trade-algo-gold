@@ -461,6 +461,47 @@ class TradingBot:
             print(f"❌ Failed to close position {position_ticket}: {result.comment}")
             return False
     
+    def modify_position_sl(self, position_ticket: int, new_stop_loss: float) -> bool:
+        """
+        Modify stop loss of an open position
+        
+        Args:
+            position_ticket: Position ticket number
+            new_stop_loss: New stop loss price
+            
+        Returns:
+            True if successfully modified, False otherwise
+        """
+        if not mt5.initialize():
+            print("❌ Failed to initialize MT5")
+            return False
+        
+        position = mt5.positions_get(ticket=position_ticket)
+        if not position:
+            print(f"❌ Position {position_ticket} not found")
+            mt5.shutdown()
+            return False
+        
+        position = position[0]
+        
+        # Create modification request
+        request = {
+            "action": mt5.TRADE_ACTION_SLTP,
+            "symbol": self.symbol,
+            "position": position_ticket,
+            "sl": new_stop_loss,
+            "tp": position.tp,  # Keep original TP
+        }
+        
+        result = mt5.order_send(request)
+        mt5.shutdown()
+        
+        if result.retcode == mt5.TRADE_RETCODE_DONE:
+            return True
+        else:
+            print(f"⚠️  Failed to modify SL: {result.comment}")
+            return False
+    
     def monitor_position(self, position_ticket: int, 
                         stop_loss: float,
                         take_profit: float,
@@ -484,9 +525,10 @@ class TradingBot:
         print(f"   Stop Loss: {stop_loss}")
         print(f"   Take Profit: {take_profit}")
         print(f"   Check interval: {check_interval} seconds")
-        print(f"   Monitoring: SAR reversal + Emergency SL break")
+        print(f"   Monitoring: SAR reversal + Emergency SL + Trailing SL")
         
         check_count = 0
+        current_sl = stop_loss  # Track current SL
         
         try:
             while True:
@@ -509,6 +551,7 @@ class TradingBot:
                 # Refresh SAR data
                 self.sar_info = self.sar.get_current_sar()
                 current_signal = self.get_sar_signal()
+                new_sar = self.sar_info['sar_value']
                 
                 # Get current price
                 if not mt5.initialize():
@@ -521,6 +564,32 @@ class TradingBot:
                 
                 current_price = tick.bid if position_type == 'BUY' else tick.ask
                 timestamp = datetime.now().strftime("%H:%M:%S")
+                
+                # Check 0: Update Trailing Stop Loss based on SAR
+                sl_updated = False
+                if position_type == 'BUY':
+                    # For BUY: SAR should be below price, move SL up if SAR moved up
+                    if new_sar > current_sl and new_sar < current_price:
+                        print(f"\n🔒 [{timestamp}] TRAILING STOP UPDATE!")
+                        print(f"   Old SL: {current_sl} → New SL: {new_sar}")
+                        print(f"   Profit locked: {(new_sar - current_sl):.2f} points")
+                        
+                        if self.modify_position_sl(position_ticket, new_sar):
+                            current_sl = new_sar
+                            sl_updated = True
+                            print(f"   ✅ Stop Loss updated in MT5")
+                        
+                elif position_type == 'SELL':
+                    # For SELL: SAR should be above price, move SL down if SAR moved down
+                    if new_sar < current_sl and new_sar > current_price:
+                        print(f"\n🔒 [{timestamp}] TRAILING STOP UPDATE!")
+                        print(f"   Old SL: {current_sl} → New SL: {new_sar}")
+                        print(f"   Profit locked: {(current_sl - new_sar):.2f} points")
+                        
+                        if self.modify_position_sl(position_ticket, new_sar):
+                            current_sl = new_sar
+                            sl_updated = True
+                            print(f"   ✅ Stop Loss updated in MT5")
                 
                 # Check 1: SAR Reversal
                 sar_reversed = False
@@ -556,10 +625,10 @@ class TradingBot:
                 
                 # Check 2: Emergency Stop Loss (price broke SL but order didn't trigger)
                 emergency_sl_hit = False
-                if position_type == 'BUY' and current_price < stop_loss:
+                if position_type == 'BUY' and current_price < current_sl:
                     emergency_sl_hit = True
                     print(f"\n🚨 [{timestamp}] EMERGENCY STOP LOSS!")
-                    print(f"   Current Price: {current_price} < Stop Loss: {stop_loss}")
+                    print(f"   Current Price: {current_price} < Stop Loss: {current_sl}")
                     print(f"   MT5 SL didn't trigger - Force closing position!")
                     
                     if self.close_position(position_ticket):
@@ -567,15 +636,15 @@ class TradingBot:
                             "closed": True,
                             "reason": "Emergency Stop Loss (price below SL)",
                             "price": current_price,
-                            "stop_loss": stop_loss,
-                            "slippage": abs(current_price - stop_loss),
+                            "stop_loss": current_sl,
+                            "slippage": abs(current_price - current_sl),
                             "checks": check_count
                         }
                 
-                elif position_type == 'SELL' and current_price > stop_loss:
+                elif position_type == 'SELL' and current_price > current_sl:
                     emergency_sl_hit = True
                     print(f"\n🚨 [{timestamp}] EMERGENCY STOP LOSS!")
-                    print(f"   Current Price: {current_price} > Stop Loss: {stop_loss}")
+                    print(f"   Current Price: {current_price} > Stop Loss: {current_sl}")
                     print(f"   MT5 SL didn't trigger - Force closing position!")
                     
                     if self.close_position(position_ticket):
@@ -583,17 +652,17 @@ class TradingBot:
                             "closed": True,
                             "reason": "Emergency Stop Loss (price above SL)",
                             "price": current_price,
-                            "stop_loss": stop_loss,
-                            "slippage": abs(current_price - stop_loss),
+                            "stop_loss": current_sl,
+                            "slippage": abs(current_price - current_sl),
                             "checks": check_count
                         }
                 
                 # Display monitoring status
-                if check_count % 6 == 1:  # Every ~30 seconds (if check_interval=5)
+                if check_count % 6 == 1 or sl_updated:  # Every ~30 seconds or when SL updated
                     profit_loss = current_position.profit if current_position else 0
                     print(f"\n📊 [{timestamp}] Monitor Check #{check_count}")
                     print(f"   Price: {current_price} | SAR: {self.sar_info['sar_value']} | Signal: {current_signal}")
-                    print(f"   P&L: ${profit_loss:.2f} | SL: {stop_loss} | TP: {take_profit}")
+                    print(f"   P&L: ${profit_loss:.2f} | SL: {current_sl} | TP: {take_profit}")
                 
                 # Wait before next check
                 time.sleep(check_interval)
