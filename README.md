@@ -244,27 +244,6 @@ RiskManager(
 )
 ```
 
----
-
-## 📱 Access Dashboard from Phone/Tablet
-
-1. Find your computer's local IP:
-   ```bash
-   ipconfig  # Windows
-   ```
-
-2. Edit `dashboard_app.py`:
-   ```python
-   dashboard = initialize_dashboard(host='0.0.0.0', port=5000)
-   ```
-
-3. Access from any device on same network:
-   ```
-   http://YOUR_COMPUTER_IP:5000
-   ```
-
----
-
 ## ⚠️ Disclaimer
 
 This is a trading bot that executes real trades on MetaTrader5. Use at your own risk. 
@@ -278,24 +257,6 @@ This is a trading bot that executes real trades on MetaTrader5. Use at your own 
 
 ---
 
-## 📈 Roadmap
-
-See `CHANGELOG.md` for planned features:
-- Circuit breaker system
-- MOST indicator integration
-- Multi-indicator strategy
-- Performance analytics
-- Cloud deployment
-
----
-
 ## 🤝 Contributing
 
 This is a personal trading project. Feel free to fork and modify for your own use.
-
----
-
-## 📄 License
-
-Private project - All rights reserved.
-

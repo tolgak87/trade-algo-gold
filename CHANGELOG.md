@@ -27,8 +27,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Automated Trading Loop**: Continuous trading bot operation, even the position closed manually, code will check for new opportunity
 
 ### 📱 Planned for v1.2
-- [x] **Web Dashboard**: Real-time monitoring interface (localhost, WebSocket-based)
-- [x] **Email Notifications**: Send email after manuel or TP/SL process
+- **Web Dashboard**: Real-time monitoring interface (localhost, WebSocket-based)
+- **Email Notifications**: Send email after manuel or TP/SL process
 
 ## [Unreleased]
 
