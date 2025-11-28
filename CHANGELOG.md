@@ -60,25 +60,4 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [ ] **Cloud Deployment**: Docker containerization and cloud hosting support
 
 
----
 
-## 📌 Version Format
-
-This project uses **Semantic Versioning** (MAJOR.MINOR.PATCH):
-
-- **MAJOR** (x.0.0): Breaking changes, major rewrites
-- **MINOR** (0.x.0): New features, backward compatible additions
-- **PATCH** (0.0.x): Bug fixes, small improvements, documentation updates
-
----
-
-## 🏷️ Tags Legend
-
-- 🎉 Initial Release
-- ✨ New Feature
-- 🐛 Bug Fix
-- 🔧 Configuration
-- 📚 Documentation
-- 🚀 Performance
-- 🔒 Security
-- ⚠️ Breaking Change
