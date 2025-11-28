@@ -3,3 +3,4 @@ demo.txt
 account_info.json
 /src/__pycache__/
 /trade_logs/
+email_credentials.json

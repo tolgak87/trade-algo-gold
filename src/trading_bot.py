@@ -10,6 +10,7 @@ from src.order_executor import OrderExecutor
 from src.risk_manager import RiskManager
 from src.trade_logger import TradeLogger
 from src.parabolic_sar import ParabolicSAR
+from src.email_notifier import EmailNotifier, load_email_config
 
 
 class TradingBot:
@@ -30,6 +31,7 @@ class TradingBot:
         self.risk_manager: Optional[RiskManager] = None
         self.executor: Optional[OrderExecutor] = None
         self.sar: Optional[ParabolicSAR] = None
+        self.email_notifier: Optional[EmailNotifier] = None
         
         # Data
         self.symbol_info: Optional[object] = None
@@ -68,6 +70,9 @@ class TradingBot:
         # Step 6: Initialize Parabolic SAR
         if not self._initialize_sar():
             return False
+        
+        # Step 7: Initialize Email Notifications (optional)
+        self._initialize_email()
         
         # Get symbol info for display
         self._load_symbol_info()
@@ -145,6 +150,14 @@ class TradingBot:
             print("⚠️  SAR analysis failed")
         
         return True
+    
+    def _initialize_email(self):
+        """Initialize email notification system (optional)"""
+        try:
+            self.email_notifier = load_email_config()
+        except:
+            self.email_notifier = EmailNotifier()  # Disabled notifier
+            print("⚠️  Email notifications disabled")
     
     def _load_symbol_info(self):
         """Load symbol information for display"""
@@ -505,6 +518,7 @@ class TradingBot:
     def monitor_position(self, position_ticket: int, 
                         stop_loss: float,
                         take_profit: float,
+                        entry_price: float,
                         position_type: str = 'BUY',
                         check_interval: int = 5) -> Dict:
         """
@@ -514,6 +528,7 @@ class TradingBot:
             position_ticket: Position ticket number to monitor
             stop_loss: Original stop loss price
             take_profit: Original take profit price
+            entry_price: Entry price of position
             position_type: 'BUY' or 'SELL'
             check_interval: Seconds between checks (default: 5)
             
@@ -522,6 +537,7 @@ class TradingBot:
         """
         print(f"\n🔍 Monitoring position {position_ticket}...")
         print(f"   Position Type: {position_type}")
+        print(f"   Entry Price: {entry_price}")
         print(f"   Stop Loss: {stop_loss}")
         print(f"   Take Profit: {take_profit}")
         print(f"   Check interval: {check_interval} seconds")
@@ -529,6 +545,7 @@ class TradingBot:
         
         check_count = 0
         current_sl = stop_loss  # Track current SL
+        start_time = datetime.now()
         
         try:
             while True:
@@ -539,10 +556,81 @@ class TradingBot:
                 position_exists = any(p.ticket == position_ticket for p in positions)
                 
                 if not position_exists:
+                    # Position closed - send email notification
+                    end_time = datetime.now()
+                    duration = str(end_time - start_time).split('.')[0]
+                    
+                    # Get final position details from history
+                    final_price = 0
+                    profit_loss = 0
+                    volume = 0
+                    close_reason = "Position closed"
+                    
+                    if not mt5.initialize():
+                        close_reason = "Position closed by MT5 (SL/TP hit or manual)"
+                    else:
+                        # Get position history
+                        from datetime import timedelta
+                        history_from = start_time - timedelta(minutes=5)
+                        history_to = datetime.now() + timedelta(minutes=1)
+                        
+                        # Get deals for this position
+                        deals = mt5.history_deals_get(position=position_ticket, from_date=history_from, to_date=history_to)
+                        
+                        if deals and len(deals) > 0:
+                            # Find the exit deal (OUT)
+                            for deal in deals:
+                                if deal.entry == 1:  # 1 = OUT (exit deal)
+                                    final_price = deal.price
+                                    profit_loss = deal.profit
+                                    volume = deal.volume
+                                    
+                                    # Determine close reason from deal comment
+                                    deal_comment = deal.comment.lower()
+                                    if 'tp' in deal_comment:
+                                        close_reason = "Take Profit Hit"
+                                    elif 'sl' in deal_comment:
+                                        close_reason = "Stop Loss Hit"
+                                    else:
+                                        close_reason = "Manual Close"
+                                    break
+                            
+                            # If we didn't find exit deal, use last deal
+                            if final_price == 0 and len(deals) > 0:
+                                last_deal = deals[-1]
+                                final_price = last_deal.price
+                                profit_loss = last_deal.profit
+                                volume = last_deal.volume
+                                close_reason = "Take Profit Hit" if profit_loss > 0 else "Stop Loss Hit or Manual Close"
+                        
+                        # Get account balance after close
+                        account_balance = 0
+                        account_info = mt5.account_info()
+                        if account_info:
+                            account_balance = account_info.balance
+                        
+                        mt5.shutdown()
+                    
+                    # Send email notification
+                    if self.email_notifier and self.email_notifier.enabled:
+                        self.email_notifier.notify_position_closed({
+                            'symbol': self.symbol,
+                            'type': position_type,
+                            'ticket': position_ticket,
+                            'entry_price': entry_price,
+                            'close_price': final_price if final_price else entry_price,
+                            'volume': volume,
+                            'profit_loss': profit_loss,
+                            'close_reason': close_reason,
+                            'duration': duration,
+                            'account_balance': account_balance
+                        })
+                    
                     return {
                         "closed": True,
-                        "reason": "Position closed by MT5 (SL/TP hit or manual)",
-                        "checks": check_count
+                        "reason": close_reason,
+                        "checks": check_count,
+                        "duration": duration
                     }
                 
                 # Get current position details
@@ -725,11 +813,13 @@ class TradingBot:
                 
                 # Get position details
                 position_ticket = result.get("order_id")
+                entry_price = result["risk_info"]["entry_price"]
                 stop_loss = result["risk_info"]["stop_loss"]
                 take_profit = result["risk_info"]["take_profit"]
                 
                 print(f"\n✅ Trade opened successfully!")
                 print(f"   Ticket: {position_ticket}")
+                print(f"   Entry Price: {entry_price}")
                 print(f"   Stop Loss: {stop_loss}")
                 print(f"   Take Profit: {take_profit}")
                 
@@ -739,6 +829,7 @@ class TradingBot:
                     position_ticket=position_ticket,
                     stop_loss=stop_loss,
                     take_profit=take_profit,
+                    entry_price=entry_price,
                     position_type=desired_signal,
                     check_interval=position_check_interval
                 )

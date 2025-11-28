@@ -30,8 +30,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ### 📱 Planned for v1.2
 - [ ] **Web Dashboard**: Real-time monitoring interface
-- [ ] **Telegram Integration**: Real-time trade notifications via Telegram
-- [ ] **Email Notifications**: Trade alerts and daily reports via email
+- [ ] **Email Notifications**: Send email after manuel or TP/SL process
 - [ ] **Discord Webhook**: Optional Discord integration for trade updates
 - [ ] **Custom Alert Rules**: Configurable notification triggers
 
