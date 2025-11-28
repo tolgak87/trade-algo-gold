@@ -29,10 +29,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### 📱 Planned for v1.2
-- [ ] **Web Dashboard**: Real-time monitoring interface
-- [ ] **Email Notifications**: Send email after manuel or TP/SL process
-- [ ] **Discord Webhook**: Optional Discord integration for trade updates
-- [ ] **Custom Alert Rules**: Configurable notification triggers
+- [x] **Web Dashboard**: Real-time monitoring interface (localhost, WebSocket-based)
+- [x] **Email Notifications**: Send email after manuel or TP/SL process
 
 
 ### 🤖 Planned for v1.
@@ -57,6 +55,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - [ ] **Multiple Asset Support**: Extend beyond gold to forex pairs
 - [ ] **AI/ML Integration**: Machine learning-based signal generation
 - [ ] **Cloud Deployment**: Docker containerization and cloud hosting support
+- [ ] **Custom Alert Rules**: Configurable notification triggers
 
 
 

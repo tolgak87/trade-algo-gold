@@ -1,0 +1,275 @@
+/* Gold Trading Bot Dashboard - Custom Styles */
+
+:root {
+    --bg-dark: #1a1a1a;
+    --bg-darker: #0d0d0d;
+    --border-color: #333;
+    --success-color: #00ff88;
+    --danger-color: #ff4444;
+    --warning-color: #ffaa00;
+    --info-color: #00aaff;
+}
+
+body {
+    background-color: var(--bg-dark);
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Label text styling */
+.label-text {
+    color: #bbb !important;
+    font-size: 0.85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Metric boxes */
+.metric-box {
+    padding: 10px;
+    background-color: var(--bg-darker);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    transition: all 0.3s ease;
+}
+
+.metric-box:hover {
+    border-color: var(--info-color);
+    box-shadow: 0 0 10px rgba(0, 170, 255, 0.3);
+}
+
+.metric-box small {
+    color: #aaa !important;
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-box h4, .metric-box h5 {
+    margin: 5px 0 0 0;
+    font-weight: bold;
+}
+
+/* Cards */
+.card {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+}
+
+.card-header {
+    font-weight: bold;
+    border-bottom: 2px solid var(--border-color);
+}
+
+/* Signal display */
+.signal-display {
+    border: 2px solid var(--border-color);
+    border-radius: 10px;
+    background-color: var(--bg-darker);
+}
+
+.signal-display h1 {
+    font-weight: bold;
+    text-shadow: 0 0 10px currentColor;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+.signal-buy {
+    color: var(--success-color) !important;
+    border-color: var(--success-color) !important;
+}
+
+.signal-sell {
+    color: var(--danger-color) !important;
+    border-color: var(--danger-color) !important;
+}
+
+.signal-hold {
+    color: #888 !important;
+}
+
+/* Connection status */
+#connection-status {
+    font-size: 0.85rem;
+    padding: 5px 10px;
+    animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.bg-success-pulse {
+    animation: successPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes successPulse {
+    0%, 100% { background-color: #198754; }
+    50% { background-color: #20c997; }
+}
+
+/* Table styling */
+.table-dark {
+    --bs-table-bg: var(--bg-darker);
+    --bs-table-color: #fff;
+}
+
+.table-dark thead th {
+    color: #ddd !important;
+    font-weight: 600;
+    border-bottom: 2px solid #555 !important;
+}
+
+.table-dark tbody tr {
+    color: #ccc;
+}
+
+.table-dark tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    cursor: pointer;
+}
+
+.table-dark tbody td {
+    border-color: #333 !important;
+}
+
+/* Profit/Loss colors */
+.profit-positive {
+    color: var(--success-color) !important;
+    font-weight: bold;
+}
+
+.profit-negative {
+    color: var(--danger-color) !important;
+    font-weight: bold;
+}
+
+.profit-zero {
+    color: #888 !important;
+}
+
+/* Position type badges */
+.badge-buy {
+    background-color: var(--success-color);
+    color: #000;
+}
+
+.badge-sell {
+    background-color: var(--danger-color);
+    color: #fff;
+}
+
+/* Chart styling */
+#price-chart {
+    max-height: 400px;
+}
+
+/* Toast notifications */
+.toast {
+    background-color: var(--bg-dark);
+    color: #fff;
+    border: 1px solid var(--border-color);
+}
+
+.toast-header {
+    background-color: var(--bg-darker);
+    color: #fff;
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .metric-box h4 {
+        font-size: 1.2rem;
+    }
+    
+    .signal-display h1 {
+        font-size: 2.5rem;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+}
+
+/* Loading animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: #fff;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* Alert banners */
+.alert {
+    border-left: 4px solid currentColor;
+    animation: slideDown 0.5s ease-out;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Trend indicators */
+.trend-up {
+    color: var(--success-color);
+}
+
+.trend-up::before {
+    content: "↗ ";
+}
+
+.trend-down {
+    color: var(--danger-color);
+}
+
+.trend-down::before {
+    content: "↘ ";
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-darker);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

@@ -11,6 +11,7 @@ from src.risk_manager import RiskManager
 from src.trade_logger import TradeLogger
 from src.parabolic_sar import ParabolicSAR
 from src.email_notifier import EmailNotifier, load_email_config
+from src.dashboard_server import DashboardServer
 
 
 class TradingBot:
@@ -19,7 +20,7 @@ class TradingBot:
     Manages all trading operations and indicators
     """
     
-    def __init__(self):
+    def __init__(self, dashboard: Optional[DashboardServer] = None):
         """Initialize trading bot components"""
         self.symbol: Optional[str] = None
         self.account_balance: float = 10000.0
@@ -32,6 +33,7 @@ class TradingBot:
         self.executor: Optional[OrderExecutor] = None
         self.sar: Optional[ParabolicSAR] = None
         self.email_notifier: Optional[EmailNotifier] = None
+        self.dashboard: Optional[DashboardServer] = dashboard
         
         # Data
         self.symbol_info: Optional[object] = None
@@ -167,6 +169,47 @@ class TradingBot:
             self.symbol_info = mt5.symbol_info(self.symbol)
             mt5.shutdown()
     
+    def _update_dashboard_account(self):
+        """Update dashboard with current account information"""
+        if not self.dashboard:
+            return
+        
+        if not mt5.initialize():
+            return
+        
+        account_info = mt5.account_info()
+        if account_info:
+            self.dashboard.update_account_info({
+                'balance': account_info.balance,
+                'equity': account_info.equity,
+                'margin': account_info.margin,
+                'free_margin': account_info.margin_free,
+                'margin_level': account_info.margin_level,
+                'profit': account_info.profit
+            })
+        
+        mt5.shutdown()
+    
+    def _update_dashboard_sar(self):
+        """Update dashboard with SAR data"""
+        if not self.dashboard or not self.sar_info:
+            return
+        
+        self.dashboard.update_sar_data({
+            'sar_value': self.sar_info.get('sar_value', 0),
+            'trend': self.sar_info.get('trend', 'Unknown'),
+            'signal': self.sar_info.get('trend_signal', 'HOLD'),
+            'distance': self.sar_info.get('distance_to_sar', 0),
+            'acceleration': 0.02
+        })
+    
+    def _update_dashboard_price(self, price: float):
+        """Update dashboard with current price"""
+        if not self.dashboard or not self.sar_info:
+            return
+        
+        self.dashboard.add_price_point(price, self.sar_info.get('sar_value', 0))
+    
     def display_status(self):
         """Display bot status and information"""
         print("\n" + "=" * 60)
@@ -280,6 +323,11 @@ class TradingBot:
         result["risk_info"] = risk_info
         result["sar_info"] = self.sar_info
         
+        # Update dashboard on trade execution
+        if self.dashboard and result["success"]:
+            self.dashboard.update_bot_status(f"{position_type} position opened - Ticket #{result['order_id']}")
+            self.dashboard.send_notification(f"{position_type} order placed successfully!", "success")
+        
         if result["success"]:
             print(f"\n✅ Order placed and logged successfully!")
             print(f"   Order ID: {result['order_id']}")
@@ -290,6 +338,8 @@ class TradingBot:
             print(f"\n📊 Updated Stats: {updated_stats['total_trades']} trades today")
         else:
             print(f"\n❌ Order failed: {result.get('error')}")
+            if self.dashboard:
+                self.dashboard.send_notification(f"Order failed: {result.get('error')}", "danger")
         
         return result
     
@@ -340,6 +390,19 @@ class TradingBot:
                 # Refresh SAR data
                 self.sar_info = self.sar.get_current_sar()
                 current_signal = self.get_sar_signal()
+                
+                # Update dashboard
+                if self.dashboard:
+                    self._update_dashboard_account()
+                    self._update_dashboard_sar()
+                    self.dashboard.update_bot_status(f"Waiting for {desired_signal} signal - Check #{check_count}")
+                    self.dashboard.update_signal({
+                        'type': current_signal if current_signal else 'HOLD',
+                        'reason': f"Current: {current_signal}, Waiting for: {desired_signal}",
+                        'timestamp': datetime.now().isoformat()
+                    })
+                    if self.sar_info:
+                        self._update_dashboard_price(self.sar_info['current_price'])
                 
                 if current_signal:
                     timestamp = datetime.now().strftime("%H:%M:%S")
@@ -626,6 +689,23 @@ class TradingBot:
                             'account_balance': account_balance
                         })
                     
+                    # Update dashboard - position closed
+                    if self.dashboard:
+                        self.dashboard.update_position(None)
+                        self.dashboard.update_bot_status(f"Position closed: {close_reason}")
+                        self.dashboard.add_trade({
+                            'ticket': position_ticket,
+                            'type': position_type,
+                            'entry_price': entry_price,
+                            'close_price': final_price,
+                            'volume': volume,
+                            'profit': profit_loss,
+                            'duration': duration,
+                            'close_reason': close_reason,
+                            'timestamp': datetime.now().isoformat()
+                        })
+                        self._update_dashboard_account()
+                    
                     return {
                         "closed": True,
                         "reason": close_reason,
@@ -652,6 +732,26 @@ class TradingBot:
                 
                 current_price = tick.bid if position_type == 'BUY' else tick.ask
                 timestamp = datetime.now().strftime("%H:%M:%S")
+                
+                # Update dashboard with current position data
+                if self.dashboard and current_position:
+                    position_duration = str(datetime.now() - start_time).split('.')[0]
+                    self.dashboard.update_position({
+                        'ticket': position_ticket,
+                        'type': position_type,
+                        'symbol': self.symbol,
+                        'volume': current_position.volume,
+                        'entry_price': entry_price,
+                        'current_price': current_price,
+                        'stop_loss': current_sl,
+                        'take_profit': take_profit,
+                        'profit': current_position.profit,
+                        'duration': position_duration
+                    })
+                    self._update_dashboard_sar()
+                    self._update_dashboard_price(current_price)
+                    self._update_dashboard_account()
+                    self.dashboard.update_bot_status(f"Monitoring {position_type} position #{position_ticket}")
                 
                 # Check 0: Update Trailing Stop Loss based on SAR
                 sl_updated = False

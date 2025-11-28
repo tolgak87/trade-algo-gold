@@ -1,6 +1,23 @@
+# Sensitive files
 demo.txt
-/logs/
 account_info.json
-/src/__pycache__/
-/trade_logs/
 email_credentials.json
+
+# Logs and data
+/logs/
+/trade_logs/
+
+# Python cache
+/src/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
+
+# Flask
+instance/
+.webassets-cache
+
+# Environment
+.env
+venv/
+env/
