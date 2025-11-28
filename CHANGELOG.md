@@ -26,12 +26,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Close Position if SL passed**: Close position for sudden decreases and stop loss not worked
 - **Automated Trading Loop**: Continuous trading bot operation, even the position closed manually, code will check for new opportunity
 
-## [Unreleased]
-
 ### 📱 Planned for v1.2
 - [x] **Web Dashboard**: Real-time monitoring interface (localhost, WebSocket-based)
 - [x] **Email Notifications**: Send email after manuel or TP/SL process
 
+## [Unreleased]
 
 ### 🤖 Planned for v1.
 - [ ] **Circuit Breaker System**: Automatic trading pause conditions:
