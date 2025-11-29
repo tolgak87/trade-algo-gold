@@ -30,6 +30,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 - **Web Dashboard**: Real-time monitoring interface (localhost, WebSocket-based)
 - **Email Notifications**: Send email after manuel or TP/SL process
 
+### 📱 Planned for v1.3
+- **Back Testing**: Back testing from last 2 months of MT5 data (1 min candle)
+
+
 ## [Unreleased]
 
 ### 🤖 Planned for v1.

@@ -1,19 +1,96 @@
 """
 Dashboard-Enabled Trading Bot Launcher
 Runs trading bot with real-time web dashboard
+
+🔧 BACKTEST MODE: Set BACKTEST_MODE = True to test on historical data
 """
 
 from src.trading_bot import TradingBot
 from src.dashboard_server import initialize_dashboard
+from datetime import datetime, timedelta
 import time
+
+# ============================================================
+# 🎚️ TOGGLE BACKTEST MODE HERE
+# ============================================================
+BACKTEST_MODE = False  # Set to True to run backtest instead of live trading
+# ============================================================
 
 
 def main():
     """
     Main entry point with dashboard
     """
+    if BACKTEST_MODE:
+        run_backtest_mode()
+    else:
+        run_live_trading_mode()
+
+
+def run_backtest_mode():
+    """
+    Run backtesting mode on historical data
+    """
     print("\n" + "="*70)
-    print("🌐 GOLD TRADING BOT WITH WEB DASHBOARD")
+    print("🔬 GOLD TRADING BOT - BACKTEST MODE")
+    print("="*70)
+    
+    from backtest.backtest_engine import BacktestEngine
+    
+    # Backtest configuration
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=90)  # Last 3 months
+    
+    print(f"\n⚙️  Backtest Configuration:")
+    print(f"   Symbol: XAUUSD")
+    print(f"   Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
+    print(f"   Strategy: Parabolic SAR (15M timeframe)")
+    print(f"   Initial Balance: $10,000")
+    print(f"   Risk per Trade: 1%")
+    print(f"   Signals: BOTH (BUY and SELL)")
+    
+    # Create and run backtest
+    engine = BacktestEngine(
+        symbol="XAUUSD",
+        initial_balance=10000.0,
+        risk_percentage=1.0
+    )
+    
+    try:
+        result = engine.run_backtest(
+            start_date=start_date,
+            end_date=end_date,
+            desired_signal='BOTH'
+        )
+        
+        # Display results
+        result.print_summary()
+        result.print_monthly_breakdown()
+        result.save_to_file()
+        
+        # Recommendations
+        print("\n💡 Next Steps:")
+        if result.return_percentage > 0:
+            print("   ✅ Strategy is profitable on historical data")
+            print("   ✅ Set BACKTEST_MODE = False in dashboard_app.py to trade live")
+        else:
+            print("   ❌ Strategy needs improvement")
+            print("   💡 Try running backtest_app.py to test different parameters")
+        
+    except Exception as e:
+        print(f"\n❌ Backtest failed: {e}")
+        import traceback
+        traceback.print_exc()
+    
+    print("\n" + "="*70)
+
+
+def run_live_trading_mode():
+    """
+    Run live trading mode with dashboard
+    """
+    print("\n" + "="*70)
+    print("🌐 GOLD TRADING BOT - LIVE TRADING MODE")
     print("="*70)
     
     # Step 1: Initialize and start dashboard server
@@ -40,7 +117,7 @@ def main():
     bot.display_status()
     
     # Configuration
-    desired_signal = 'SELL'  # Change to 'SELL' if you want to wait for sell signals
+    desired_signal = 'BUY'  # Change to 'SELL' if you want to wait for sell signals
     risk_percentage = 1.0   # Risk 1% per trade
     signal_check_interval = 30  # Check for signals every 30 seconds
     position_check_interval = 5  # Monitor position every 5 seconds
@@ -66,7 +143,7 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        print("\n\n⚠️  Trading bot stopped by user")
+        print("\n\n⚠️  Bot stopped by user")
         print("👋 Goodbye!")
     except Exception as e:
         print(f"\n❌ Fatal error: {e}")

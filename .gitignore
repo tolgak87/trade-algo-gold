@@ -6,6 +6,7 @@ email_credentials.json
 # Logs and data
 /logs/
 /trade_logs/
+/backtest_results/
 
 # Python cache
 /src/__pycache__/
