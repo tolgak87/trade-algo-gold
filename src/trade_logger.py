@@ -396,6 +396,34 @@ class TradeLogger:
             print(f"   P/L %: {trade['profit_loss_percentage']}%")
         
         print("=" * 60)
+    
+    def get_first_trade_balance(self, date: Optional[datetime] = None) -> Optional[float]:
+        """
+        Get the account balance from the first trade of the day.
+        This represents the starting balance for that day.
+        
+        Args:
+            date: Date to get first trade balance for (today if None)
+            
+        Returns:
+            float: Account balance from first trade, or None if no trades
+        """
+        trades = self.get_trades_by_date(date) if date else self.get_today_trades()
+        
+        if not trades:
+            return None
+        
+        # Sort by entry time (oldest first)
+        sorted_trades = sorted(trades, key=lambda x: x.get("entry_time", ""))
+        
+        if sorted_trades:
+            first_trade = sorted_trades[0]
+            # Get balance from first trade (balance at entry time)
+            balance = first_trade.get("account_balance_at_entry")
+            if balance:
+                return float(balance)
+        
+        return None
 
 
 def main():

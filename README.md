@@ -246,6 +246,61 @@ RiskManager(
 
 ---
 
+## 🛡️ Protection Systems
+
+### Circuit Breaker System
+Automatically pauses trading when dangerous loss patterns are detected:
+
+**Loss Pattern Rules:**
+1. **5 consecutive losses** → Pause 3 hours
+2. **3 more consecutive losses (8 total)** → Pause 5 additional hours
+3. **70% losses in last 10 trades** → Pause 5 hours
+
+**Features:**
+- Email notifications with account balance and loss details
+- State persistence (pause survives bot restarts)
+- Configurable thresholds in `protection_config.json`
+- Visual status display with remaining pause time
+
+### Daily Loss Limit
+Protects your account from excessive daily losses:
+
+**How it works:**
+- Tracks your starting balance at the beginning of each trading day
+- Calculates real-time loss from starting balance (not from trade logs)
+- Automatically pauses trading when limit is reached
+- Resumes trading at midnight (new day)
+
+**Default Settings:**
+- Maximum daily loss: **10% of starting balance**
+- Can be changed to fixed dollar amount instead
+- Email notification when limit is reached
+
+**Configuration** (`protection_config.json`):
+```json
+{
+    "daily_loss_limit": {
+        "enabled": true,
+        "max_daily_loss_dollars": 1000,
+        "max_daily_loss_percentage": 10,
+        "use_percentage": true
+    }
+}
+```
+
+**Testing:**
+```bash
+python test_daily_loss_limit.py
+```
+
+Shows:
+- Current balance vs starting balance
+- Current daily loss amount and percentage
+- Remaining loss allowance before limit
+- Whether trading is allowed
+
+---
+
 ## 🔄 Circuit Breaker Reset
 
 ### What is it?

@@ -36,14 +36,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-### 🤖 Planned for v1.
-- [ ] **Circuit Breaker System**: Automatic trading pause on loss patterns:
+### ✅ Completed for v1.4
+- [x] **Circuit Breaker System**: Automatic trading pause on loss patterns:
   - 5 consecutive losses → pause 3h | 3 more consecutive losses → pause 5h more
   - 70% losses in last 10 trades → pause 5h
-- [ ] **Daily Loss Limit**: Configurable maximum daily loss protection
+  - Email notifications with account balance and loss details
+  - State persistence across bot restarts
+- [x] **Daily Loss Limit**: Configurable maximum daily loss protection (Default 10% loss)
+  - Tracks starting balance at beginning of each day
+  - Real-time loss calculation from starting balance
+  - Automatic pause until next day when limit reached
+  - Percentage-based (default) or fixed dollar amount
+  - Email notification on limit breach
+  - Visual display of remaining loss allowance
 
-
-### � Planned for v1.
+### 🤖 Planned for v1.5
 - [ ] **MOST Indicator Integration**: Implementation of MOST (Moving Stop Loss) indicator for dynamic trend analysis
 - [ ] **Multi-Indicator Strategy**: Combined signal generation using both MOST and Parabolic SAR indicators for enhanced trade accuracy
 - [ ] **Indicator Confirmation System**: Trade execution only when both indicators align (consensus-based trading)

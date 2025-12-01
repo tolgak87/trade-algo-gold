@@ -182,6 +182,24 @@ class TradingBot:
             print(f"   ⚠️  Currently PAUSED: {status['pause_reason']}")
             print(f"   Remaining: {status['remaining_display']}")
         
+        # Show daily balance tracking
+        first_trade_balance = self.trade_logger.get_first_trade_balance()
+        if first_trade_balance:
+            print(f"\n💰 Daily Balance Tracking:")
+            print(f"   Starting Balance (from first trade): ${first_trade_balance:.2f}")
+            print(f"   Current Balance: ${self.account_balance:.2f}")
+            
+            diff = self.account_balance - first_trade_balance
+            if diff < 0:
+                print(f"   Daily Change: -${abs(diff):.2f} ({(diff/first_trade_balance)*100:.2f}%)")
+            elif diff > 0:
+                print(f"   Daily Change: +${diff:.2f} (+{(diff/first_trade_balance)*100:.2f}%)")
+            else:
+                print(f"   Daily Change: $0.00 (0%)")
+        else:
+            print(f"\n💰 Starting Balance: ${self.account_balance:.2f}")
+            print(f"   (No trades yet today)")
+        
         return True
     
     def _load_symbol_info(self):
@@ -305,7 +323,7 @@ class TradingBot:
                 return {"success": False, "error": reason}
             
             # Check daily loss limit
-            allowed, reason = self.circuit_breaker.check_daily_loss_limit(self.account_balance)
+            allowed, reason = self.circuit_breaker.check_daily_loss_limit(self.account_balance, self.email_notifier)
             if not allowed:
                 print(f"\n🔴 TRADE BLOCKED: {reason}")
                 if self.dashboard:

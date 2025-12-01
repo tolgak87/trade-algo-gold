@@ -85,7 +85,9 @@ class CircuitBreaker:
             "pause_start_time": None,
             "pause_end_time": None,
             "consecutive_losses": 0,
-            "total_pause_count": 0
+            "total_pause_count": 0,
+            "daily_starting_balance": None,
+            "last_reset_date": None
         }
     
     def _save_state(self):
@@ -354,12 +356,31 @@ class CircuitBreaker:
         self._save_state()
         print("⚠️  Circuit breaker force reset!")
     
-    def check_daily_loss_limit(self, current_balance: float) -> tuple[bool, Optional[str]]:
+    def check_daily_loss_limit(self, current_balance: float, email_notifier=None) -> tuple[bool, Optional[str]]:
         """
         Check if daily loss limit is reached
         
+        Uses TRADE LOGS to calculate actual daily loss (includes bot trades AND manual MT5 trades)
+        
+        IMPORTANT: Starting balance is loaded from FIRST TRADE of the day in trade logs.
+        This ensures consistency even if bot is restarted multiple times.
+        
+        How it works:
+        1. Check if there are any trades today
+        2. If yes: Use balance from first trade as starting balance
+        3. If no: Use current balance as starting balance
+        4. Calculate total loss from all trades
+        5. Compare against limit
+        
+        Example:
+        - 07:00 → First trade opened → Balance: $10,000 (from trade log)
+        - 09:00 → Bot closed
+        - 10:00 → Bot starts → Reads first trade → Starting balance: $10,000 ✅
+        - All day trades calculated against $10,000 starting point
+        
         Args:
             current_balance: Current account balance
+            email_notifier: Optional EmailNotifier instance for sending alerts
             
         Returns:
             tuple: (is_allowed: bool, reason: Optional[str])
@@ -367,29 +388,122 @@ class CircuitBreaker:
         if not self.config["daily_loss_limit"]["enabled"]:
             return True, None
         
-        # Get today's statistics
-        stats = self.trade_logger.get_trade_statistics()
-        total_profit = stats.get("total_profit", 0)
+        # Get starting balance from first trade of the day
+        first_trade_balance = self.trade_logger.get_first_trade_balance()
         
-        # Only check if there's a loss
-        if total_profit >= 0:
+        # Initialize or reset for new day
+        today = datetime.now().strftime("%Y-%m-%d")
+        
+        if self.state["last_reset_date"] != today:
+            # NEW DAY
+            if first_trade_balance is not None:
+                # Use balance from first trade
+                starting_balance = first_trade_balance
+                print(f"📅 New trading day - Starting balance from first trade: ${starting_balance:.2f}")
+            else:
+                # No trades yet today, use current balance
+                starting_balance = current_balance
+                print(f"📅 New trading day - Starting balance: ${current_balance:.2f} (no trades yet)")
+            
+            self.state["daily_starting_balance"] = starting_balance
+            self.state["last_reset_date"] = today
+            self.state["total_pause_count"] = 0
+            self._save_state()
             return True, None
         
-        daily_loss = abs(total_profit)
+        # SAME DAY - Use starting balance from state (will be updated if first trade appears)
+        if first_trade_balance is not None:
+            # Always use first trade balance as the source of truth
+            starting_balance = first_trade_balance
+            
+            # Update state if it's different (bot restarted before any checks)
+            if self.state.get("daily_starting_balance") != first_trade_balance:
+                self.state["daily_starting_balance"] = first_trade_balance
+                self._save_state()
+                print(f"💡 Updated starting balance from first trade: ${starting_balance:.2f}")
+        else:
+            # No trades yet, use state or current balance
+            starting_balance = self.state.get("daily_starting_balance", current_balance)
+        
+        # Inform user about starting balance vs current balance
+        if starting_balance != current_balance and not hasattr(self, '_informed_about_balance'):
+            self._informed_about_balance = True
+            balance_diff = current_balance - starting_balance
+            if balance_diff < 0:
+                print(f"💡 Daily tracking: Started ${starting_balance:.2f} → Now ${current_balance:.2f} (${abs(balance_diff):.2f} loss)")
+            else:
+                print(f"💡 Daily tracking: Started ${starting_balance:.2f} → Now ${current_balance:.2f} (+${balance_diff:.2f} profit)")
+        
+        # Get today's trade statistics (includes ALL trades - bot and manual)
+        stats = self.trade_logger.get_trade_statistics()
+        total_daily_profit = stats.get("total_profit", 0)
+        
+        # Check if there's a loss
+        if total_daily_profit >= 0:
+            # No loss or in profit
+            return True, None
+        
+        # Calculate daily loss (positive number)
+        daily_loss = abs(total_daily_profit)
         cfg = self.config["daily_loss_limit"]
         
         if cfg["use_percentage"]:
             # Check percentage-based limit
-            loss_percentage = (daily_loss / current_balance) * 100
+            loss_percentage = (daily_loss / starting_balance) * 100
             max_percentage = cfg["max_daily_loss_percentage"]
             
             if loss_percentage >= max_percentage:
-                return False, f"🔴 DAILY LOSS LIMIT: ${daily_loss:.2f} ({loss_percentage:.1f}% of balance) | Max: {max_percentage}%"
+                # Activate pause for rest of the day
+                reason = f"Daily loss limit reached: ${daily_loss:.2f} ({loss_percentage:.1f}% of ${starting_balance:.2f}) | Max: {max_percentage}%"
+                
+                if not self.state["is_paused"]:
+                    # Calculate hours until midnight
+                    now = datetime.now()
+                    midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+                    hours_until_midnight = (midnight - now).total_seconds() / 3600
+                    
+                    breaker_data = self._activate_pause(
+                        hours=max(1, int(hours_until_midnight) + 1),  # At least 1 hour
+                        reason=reason
+                    )
+                    
+                    # Add daily loss specific info
+                    breaker_data["daily_loss"] = daily_loss
+                    breaker_data["loss_percentage"] = loss_percentage
+                    breaker_data["starting_balance"] = starting_balance
+                    
+                    # Send email notification
+                    if email_notifier and email_notifier.enabled:
+                        email_notifier.notify_circuit_breaker(breaker_data)
+                
+                return False, f"🔴 DAILY LOSS LIMIT: ${daily_loss:.2f} ({loss_percentage:.1f}%) | Max: {max_percentage}%"
         else:
             # Check dollar-based limit
             max_loss = cfg["max_daily_loss_dollars"]
             
             if daily_loss >= max_loss:
+                reason = f"Daily loss limit reached: ${daily_loss:.2f} | Max: ${max_loss}"
+                
+                if not self.state["is_paused"]:
+                    # Calculate hours until midnight
+                    now = datetime.now()
+                    midnight = datetime.combine(now.date() + timedelta(days=1), datetime.min.time())
+                    hours_until_midnight = (midnight - now).total_seconds() / 3600
+                    
+                    breaker_data = self._activate_pause(
+                        hours=max(1, int(hours_until_midnight) + 1),
+                        reason=reason
+                    )
+                    
+                    # Add daily loss specific info
+                    breaker_data["daily_loss"] = daily_loss
+                    breaker_data["loss_percentage"] = (daily_loss / starting_balance) * 100
+                    breaker_data["starting_balance"] = starting_balance
+                    
+                    # Send email notification
+                    if email_notifier and email_notifier.enabled:
+                        email_notifier.notify_circuit_breaker(breaker_data)
+                
                 return False, f"🔴 DAILY LOSS LIMIT: ${daily_loss:.2f} | Max: ${max_loss}"
         
         return True, None
@@ -397,6 +511,7 @@ class CircuitBreaker:
     def display_status(self):
         """Display circuit breaker status in formatted way"""
         status = self.get_status()
+        current_balance = self._get_current_balance()
         
         print("\n" + "=" * 70)
         print("🛡️  CIRCUIT BREAKER STATUS")
@@ -415,6 +530,44 @@ class CircuitBreaker:
             print(f"   Loss % (Last 10): {status['percentage_losses']}%")
         
         print(f"   Total Pauses Today: {status['total_pause_count']}")
+        
+        # Daily loss limit info
+        if self.config["daily_loss_limit"]["enabled"]:
+            starting_balance = self.state.get("daily_starting_balance")
+            if starting_balance:
+                # Get actual loss from trade logs
+                stats = self.trade_logger.get_trade_statistics()
+                total_daily_profit = stats.get("total_profit", 0)
+                daily_loss = abs(total_daily_profit) if total_daily_profit < 0 else 0
+                loss_pct = (daily_loss / starting_balance) * 100 if starting_balance > 0 else 0
+                
+                cfg = self.config["daily_loss_limit"]
+                max_pct = cfg["max_daily_loss_percentage"]
+                max_dollars = cfg["max_daily_loss_dollars"]
+                
+                print(f"\n💰 Daily Loss Tracking:")
+                print(f"   Starting Balance: ${starting_balance:.2f}")
+                print(f"   Current Balance: ${current_balance:.2f}")
+                print(f"   Daily Loss (from trades): ${daily_loss:.2f} ({loss_pct:.1f}%)")
+                
+                if total_daily_profit > 0:
+                    print(f"   ✅ Daily Profit: ${total_daily_profit:.2f}")
+                
+                if cfg["use_percentage"]:
+                    print(f"   Limit: {max_pct}% (${starting_balance * max_pct / 100:.2f})")
+                    remaining_loss = (starting_balance * max_pct / 100) - daily_loss
+                    if remaining_loss > 0:
+                        print(f"   ✅ Remaining: ${remaining_loss:.2f} ({max_pct - loss_pct:.1f}%)")
+                    else:
+                        print(f"   🔴 LIMIT REACHED!")
+                else:
+                    print(f"   Limit: ${max_dollars}")
+                    remaining_loss = max_dollars - daily_loss
+                    if remaining_loss > 0:
+                        print(f"   ✅ Remaining: ${remaining_loss:.2f}")
+                    else:
+                        print(f"   🔴 LIMIT REACHED!")
+        
         print("=" * 70)
 
 

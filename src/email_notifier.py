@@ -286,9 +286,45 @@ Gold Trading Bot Alert System
         total_daily_loss = breaker_data.get('total_daily_loss', 0)
         current_balance = breaker_data.get('current_balance', 0)
         
-        subject = f"🔴 CIRCUIT BREAKER ACTIVATED - Trading Paused"
+        # Check if this is a daily loss limit breach
+        daily_loss = breaker_data.get('daily_loss')
+        loss_percentage = breaker_data.get('loss_percentage')
+        starting_balance = breaker_data.get('starting_balance')
         
-        body = f"""
+        if daily_loss is not None:
+            # Daily Loss Limit notification
+            subject = f"🔴 DAILY LOSS LIMIT REACHED - Trading Paused"
+            
+            body = f"""
+Gold Trading Bot - DAILY LOSS LIMIT ALERT
+{'=' * 50}
+
+⚠️  DAILY LOSS LIMIT REACHED - TRADING PAUSED UNTIL MIDNIGHT
+
+💰 Account Status:
+- Starting Balance (Today): ${starting_balance:.2f}
+- Current Balance: ${current_balance:.2f}
+- Daily Loss: ${daily_loss:.2f} ({loss_percentage:.1f}%)
+
+📊 Loss Details:
+- Total Trades Today: Multiple
+- Total Loss Today: ${abs(total_daily_loss):.2f}
+- Consecutive Losses: {consecutive_losses}
+
+⏰ Trading will automatically resume at midnight (new trading day).
+
+💡 Tip: Consider reviewing your strategy and risk management settings.
+
+Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+{'=' * 50}
+Gold Trading Bot Protection System
+"""
+        else:
+            # Circuit Breaker notification
+            subject = f"🔴 CIRCUIT BREAKER ACTIVATED - Trading Paused"
+            
+            body = f"""
 Gold Trading Bot - CIRCUIT BREAKER ALERT
 {'=' * 50}
 
@@ -306,6 +342,8 @@ Reason: {reason}
 - Total Pauses Today: {total_pauses}
 
 ⏰ The bot will automatically resume trading when the pause period ends.
+
+💡 Tip: Monitor your trading strategy during pause periods.
 
 Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 

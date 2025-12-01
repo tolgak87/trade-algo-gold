@@ -11,8 +11,10 @@
     },
     "daily_loss_limit": {
         "enabled": true,
-        "max_daily_loss_dollars": 500,
-        "max_daily_loss_percentage": 5,
-        "use_percentage": true
+        "max_daily_loss_dollars": 1000,
+        "max_daily_loss_percentage": 10,
+        "use_percentage": true,
+        "description": "Daily loss limit - Pauses trading until midnight when limit reached",
+        "_note": "use_percentage=true → Uses percentage (10% loss), use_percentage=false → Uses fixed dollars ($1000 loss). ONLY ONE IS ACTIVE AT A TIME!"
     }
 }
