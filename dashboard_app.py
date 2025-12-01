@@ -117,7 +117,7 @@ def run_live_trading_mode():
     bot.display_status()
     
     # Configuration
-    desired_signal = 'BUY'  # Change to 'SELL' if you want to wait for sell signals
+    desired_signal = 'SELL'  # Change to 'SELL' if you want to wait for sell signals
     risk_percentage = 1.0   # Risk 1% per trade
     signal_check_interval = 30  # Check for signals every 30 seconds
     position_check_interval = 5  # Monitor position every 5 seconds
