@@ -244,6 +244,34 @@ RiskManager(
 )
 ```
 
+---
+
+## 🔄 Circuit Breaker Reset
+
+### What is it?
+`reset_circuit_breaker.py` is a utility script that clears the circuit breaker's persistent state, allowing the bot to start fresh without previous pause restrictions.
+
+### Why is it needed?
+The circuit breaker system saves its state (active pauses, loss counters) to `circuit_breaker_state.json` to ensure protections survive bot restarts. However, when you want to start trading from scratch, you may need to clear this state.
+
+### How to use it?
+
+```bash
+python reset_circuit_breaker.py
+```
+
+**Options:**
+1. **Keep all trade logs** (recommended) - Only clears circuit breaker state, preserves trade history
+2. **Clear today's logs** - Resets state and removes today's trade log file
+3. **Clear ALL logs** - Complete reset including all historical trade data (use with caution)
+
+### When to use?
+- Starting a new trading session after a circuit breaker pause from previous trades
+- Testing the bot with clean state
+- After making changes to circuit breaker configuration
+
+**Note:** This does not affect your actual MT5 positions or account balance, only the bot's internal state tracking.
+
 ## ⚠️ Disclaimer
 
 This is a trading bot that executes real trades on MetaTrader5. Use at your own risk. 

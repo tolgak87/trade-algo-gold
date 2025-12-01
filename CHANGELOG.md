@@ -37,9 +37,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ## [Unreleased]
 
 ### 🤖 Planned for v1.
-- [ ] **Circuit Breaker System**: Automatic trading pause conditions:
-  - Stop trading for 1 hour if last 5 consecutive trades are losses
-  - Stop trading for 1 hour if 70% of last 10 trades failed
+- [ ] **Circuit Breaker System**: Automatic trading pause on loss patterns:
+  - 5 consecutive losses → pause 3h | 3 more consecutive losses → pause 5h more
+  - 70% losses in last 10 trades → pause 5h
 - [ ] **Daily Loss Limit**: Configurable maximum daily loss protection
 
 

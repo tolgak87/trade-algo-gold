@@ -17,7 +17,9 @@ class TradeLogger:
         Args:
             log_directory: Directory to store log files
         """
-        self.log_directory = log_directory
+        # Get the project root directory (parent of src/)
+        self.project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        self.log_directory = os.path.join(self.project_root, log_directory)
         self._ensure_log_directory()
     
     def _ensure_log_directory(self):

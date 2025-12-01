@@ -1,0 +1,18 @@
+{
+    "circuit_breaker": {
+        "enabled": true,
+        "consecutive_loss_threshold_1": 5,
+        "consecutive_loss_pause_hours_1": 3,
+        "consecutive_loss_threshold_2": 8,
+        "consecutive_loss_pause_hours_2": 5,
+        "percentage_loss_window": 10,
+        "percentage_loss_threshold": 70,
+        "percentage_loss_pause_hours": 5
+    },
+    "daily_loss_limit": {
+        "enabled": true,
+        "max_daily_loss_dollars": 500,
+        "max_daily_loss_percentage": 5,
+        "use_percentage": true
+    }
+}

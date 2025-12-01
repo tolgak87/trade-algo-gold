@@ -264,6 +264,56 @@ Gold Trading Bot Alert System
 """
         
         return self.send_email(subject, body)
+    
+    def notify_circuit_breaker(self, breaker_data: Dict) -> bool:
+        """
+        Send notification when circuit breaker activates
+        
+        Args:
+            breaker_data: Dictionary with circuit breaker details
+            
+        Returns:
+            True if notification sent successfully
+        """
+        if not self.enabled:
+            return False
+        
+        reason = breaker_data.get('reason', 'Unknown')
+        pause_hours = breaker_data.get('pause_hours', 0)
+        consecutive_losses = breaker_data.get('consecutive_losses', 0)
+        percentage_losses = breaker_data.get('percentage_losses', 'N/A')
+        total_pauses = breaker_data.get('total_pauses', 0)
+        total_daily_loss = breaker_data.get('total_daily_loss', 0)
+        current_balance = breaker_data.get('current_balance', 0)
+        
+        subject = f"🔴 CIRCUIT BREAKER ACTIVATED - Trading Paused"
+        
+        body = f"""
+Gold Trading Bot - CIRCUIT BREAKER ALERT
+{'=' * 50}
+
+⚠️  TRADING PAUSED FOR {pause_hours} HOUR(S)
+
+Reason: {reason}
+
+💰 Account Status:
+- Current Balance: ${current_balance:.2f}
+- Total Loss Today: ${abs(total_daily_loss):.2f}
+
+📊 Loss Metrics:
+- Consecutive Losses: {consecutive_losses}
+- Loss Percentage (Last 10): {percentage_losses}%
+- Total Pauses Today: {total_pauses}
+
+⏰ The bot will automatically resume trading when the pause period ends.
+
+Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+
+{'=' * 50}
+Gold Trading Bot Protection System
+"""
+        
+        return self.send_email(subject, body)
 
 
 def load_email_config(config_file: str = "email_config.json") -> Optional[EmailNotifier]:

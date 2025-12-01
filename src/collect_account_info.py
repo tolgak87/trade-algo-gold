@@ -1,5 +1,6 @@
 import MetaTrader5 as mt5
 import json
+import os
 from datetime import datetime
 
 def collect_account_info():
@@ -36,9 +37,13 @@ def collect_account_info():
         "collected_at": datetime.now().isoformat()
     }
     
+    # Get the correct path (script directory)
+    script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    account_file = os.path.join(script_dir, 'account_info.json')
+    
     # Save to JSON file
     try:
-        with open('account_info.json', 'w', encoding='utf-8') as f:
+        with open(account_file, 'w', encoding='utf-8') as f:
             json.dump(account_data, f, indent=4, ensure_ascii=False)
         
     except Exception as e:

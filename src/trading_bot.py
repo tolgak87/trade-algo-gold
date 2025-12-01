@@ -12,6 +12,7 @@ from src.trade_logger import TradeLogger
 from src.parabolic_sar import ParabolicSAR
 from src.email_notifier import EmailNotifier, load_email_config
 from src.dashboard_server import DashboardServer
+from src.circuit_breaker import CircuitBreaker
 
 
 class TradingBot:
@@ -34,6 +35,7 @@ class TradingBot:
         self.sar: Optional[ParabolicSAR] = None
         self.email_notifier: Optional[EmailNotifier] = None
         self.dashboard: Optional[DashboardServer] = dashboard
+        self.circuit_breaker: Optional[CircuitBreaker] = None
         
         # Data
         self.symbol_info: Optional[object] = None
@@ -75,6 +77,10 @@ class TradingBot:
         
         # Step 7: Initialize Email Notifications (optional)
         self._initialize_email()
+        
+        # Step 8: Initialize Circuit Breaker
+        if not self._initialize_circuit_breaker():
+            return False
         
         # Get symbol info for display
         self._load_symbol_info()
@@ -161,6 +167,23 @@ class TradingBot:
             self.email_notifier = EmailNotifier()  # Disabled notifier
             print("⚠️  Email notifications disabled")
     
+    def _initialize_circuit_breaker(self) -> bool:
+        """Initialize Circuit Breaker protection system"""
+        print("[7/7] Initializing Circuit Breaker protection...")
+        self.circuit_breaker = CircuitBreaker(self.trade_logger)
+        
+        # Display current status
+        status = self.circuit_breaker.get_status()
+        print(f"✅ Circuit Breaker initialized")
+        print(f"   Enabled: {'Yes' if status['enabled'] else 'No'}")
+        print(f"   Consecutive Losses: {status['consecutive_losses']}")
+        
+        if status['is_paused']:
+            print(f"   ⚠️  Currently PAUSED: {status['pause_reason']}")
+            print(f"   Remaining: {status['remaining_display']}")
+        
+        return True
+    
     def _load_symbol_info(self):
         """Load symbol information for display"""
         if not mt5.initialize():
@@ -243,6 +266,18 @@ class TradingBot:
             print(f"   Signal: {self.sar_info['trend_signal']}")
             print(f"   Distance: {self.sar_info['distance_to_sar']} ({self.sar_info['distance_percentage']}%)")
         
+        # Display Circuit Breaker status
+        if self.circuit_breaker:
+            status = self.circuit_breaker.get_status()
+            print(f"\n🛡️  Circuit Breaker:")
+            print(f"   Status: {'🔴 PAUSED' if status['is_paused'] else '✅ ACTIVE'}")
+            if status['is_paused']:
+                print(f"   Reason: {status['pause_reason']}")
+                print(f"   Remaining: {status['remaining_display']}")
+            print(f"   Consecutive Losses: {status['consecutive_losses']}/5")
+            if status['percentage_losses'] is not None:
+                print(f"   Loss Rate (10 trades): {status['percentage_losses']}%/70%")
+        
         print("\n💡 Use bot.execute_trade() to place orders")
         print("=" * 60)
     
@@ -260,6 +295,23 @@ class TradingBot:
         Returns:
             Dictionary with trade result
         """
+        # CHECK CIRCUIT BREAKER BEFORE TRADING
+        if self.circuit_breaker:
+            allowed, reason = self.circuit_breaker.is_trading_allowed(self.email_notifier)
+            if not allowed:
+                print(f"\n🔴 TRADE BLOCKED: {reason}")
+                if self.dashboard:
+                    self.dashboard.send_notification(f"Trade blocked: {reason}", "warning")
+                return {"success": False, "error": reason}
+            
+            # Check daily loss limit
+            allowed, reason = self.circuit_breaker.check_daily_loss_limit(self.account_balance)
+            if not allowed:
+                print(f"\n🔴 TRADE BLOCKED: {reason}")
+                if self.dashboard:
+                    self.dashboard.send_notification(f"Trade blocked: {reason}", "danger")
+                return {"success": False, "error": reason}
+        
         # Get current price
         if not mt5.initialize():
             return {"success": False, "error": "Failed to initialize MT5"}
@@ -386,6 +438,18 @@ class TradingBot:
         try:
             while True:
                 check_count += 1
+                
+                # CHECK CIRCUIT BREAKER STATUS
+                if self.circuit_breaker:
+                    allowed, reason = self.circuit_breaker.is_trading_allowed(self.email_notifier)
+                    if not allowed:
+                        print(f"\n🔴 {reason}")
+                        if self.dashboard:
+                            self.dashboard.update_bot_status(reason)
+                            self.dashboard.send_notification(reason, "warning")
+                        # Wait and check again
+                        time.sleep(check_interval)
+                        continue
                 
                 # Refresh SAR data
                 self.sar_info = self.sar.get_current_sar()
@@ -673,6 +737,16 @@ class TradingBot:
                             account_balance = account_info.balance
                         
                         mt5.shutdown()
+                    
+                    # LOG THE CLOSED POSITION (even if manual close)
+                    if self.trade_logger and final_price > 0:
+                        # Log the closure directly with the ticket number
+                        self.trade_logger.log_trade_close(
+                            order_id=position_ticket,
+                            exit_price=final_price,
+                            close_reason=close_reason
+                        )
+                        print(f"   📝 Trade closure logged: {close_reason} | P/L: ${profit_loss:.2f}")
                     
                     # Send email notification
                     if self.email_notifier and self.email_notifier.enabled:
