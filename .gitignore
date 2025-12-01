@@ -20,5 +20,7 @@ instance/
 venv/
 env/
 
+notes.txt
+
 # Documentation (internal notes)
 # PROTECTION_SYSTEM_ONERILER.md stays in repo for reference
