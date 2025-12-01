@@ -33,22 +33,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 ### 📱 Planned for v1.3
 - **Back Testing**: Back testing from last 2 months of MT5 data (1 min candle)
 
-
-## [Unreleased]
-
 ### ✅ Completed for v1.4
-- [x] **Circuit Breaker System**: Automatic trading pause on loss patterns:
+- **Circuit Breaker System**: Automatic trading pause on loss patterns:
   - 5 consecutive losses → pause 3h | 3 more consecutive losses → pause 5h more
   - 70% losses in last 10 trades → pause 5h
   - Email notifications with account balance and loss details
   - State persistence across bot restarts
-- [x] **Daily Loss Limit**: Configurable maximum daily loss protection (Default 10% loss)
+- **Daily Loss Limit**: Configurable maximum daily loss protection (Default 10% loss)
   - Tracks starting balance at beginning of each day
   - Real-time loss calculation from starting balance
   - Automatic pause until next day when limit reached
   - Percentage-based (default) or fixed dollar amount
   - Email notification on limit breach
   - Visual display of remaining loss allowance
+
+## [Unreleased]
 
 ### 🤖 Planned for v1.5
 - [ ] **MOST Indicator Integration**: Implementation of MOST (Moving Stop Loss) indicator for dynamic trend analysis
