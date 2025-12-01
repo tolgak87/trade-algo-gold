@@ -10,7 +10,7 @@ class TradeLogger:
     Creates daily log files with detailed trade information.
     """
     
-    def __init__(self, log_directory: str = "trade_logs"):
+    def __init__(self, log_directory: str = "logs/trade_logs"):
         """
         Initialize TradeLogger.
         

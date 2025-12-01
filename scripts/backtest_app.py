@@ -1,10 +1,19 @@
 """
 Backtesting Application Launcher
 Simple entry point to run strategy backtests
+
+Usage: Run from project root directory
+    python scripts/backtest_app.py
 """
 
-from backtest.backtest_engine import BacktestEngine
+import os
+import sys
 from datetime import datetime, timedelta
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from src.backtest.backtest_engine import BacktestEngine
 
 
 def run_backtest_demo():

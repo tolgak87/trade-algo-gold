@@ -1,10 +1,19 @@
 """
 Test Daily Loss Limit System
 Demonstrates daily loss tracking and automatic pause
+
+Usage: Run from project root directory
+    python scripts/test_daily_loss_limit.py
 """
 
+import os
+import sys
 import MetaTrader5 as mt5
 from datetime import datetime
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.trade_logger import TradeLogger
 from src.circuit_breaker import CircuitBreaker
 
@@ -117,7 +126,7 @@ def test_daily_loss_limit():
     print(f"   Max Loss %: {breaker.config['daily_loss_limit']['max_daily_loss_percentage']}%")
     print(f"   Max Loss $: ${breaker.config['daily_loss_limit']['max_daily_loss_dollars']}")
     
-    print(f"\n💡 To change settings, edit: protection_config.json")
+    print(f"\n💡 To change settings, edit: src/configs/protection_config.json")
 
 
 if __name__ == "__main__":

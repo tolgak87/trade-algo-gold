@@ -4,6 +4,7 @@ Performance metrics and reporting for backtests
 """
 
 from typing import Dict, List
+import os
 import json
 from datetime import datetime
 
@@ -191,7 +192,10 @@ class BacktestResult:
             'rating': self.get_performance_rating()
         }
         
-        filepath = f"backtest_results/{filename}"
+        # Ensure directory exists
+        os.makedirs("logs/backtest_results", exist_ok=True)
+        
+        filepath = f"logs/backtest_results/{filename}"
         with open(filepath, 'w') as f:
             json.dump(results, f, indent=4)
         

@@ -18,13 +18,13 @@ if %errorlevel% neq 0 (
 echo.
 echo [2/3] Creating configuration files...
 
-if not exist email_credentials.json (
+if not exist src\configs\email_credentials.json (
     echo Creating email_credentials.json template...
-    echo { > email_credentials.json
-    echo     "sender_email": "your_email@gmail.com", >> email_credentials.json
-    echo     "sender_password": "your_16_digit_app_password", >> email_credentials.json
-    echo     "recipient_email": "recipient@example.com" >> email_credentials.json
-    echo } >> email_credentials.json
+    echo { > src\configs\email_credentials.json
+    echo     "sender_email": "your_email@gmail.com", >> src\configs\email_credentials.json
+    echo     "sender_password": "your_16_digit_app_password", >> src\configs\email_credentials.json
+    echo     "recipient_email": "recipient@example.com" >> src\configs\email_credentials.json
+    echo } >> src\configs\email_credentials.json
     echo Email template created - please edit with your credentials
 ) else (
     echo email_credentials.json already exists
@@ -37,7 +37,7 @@ echo ============================================================
 echo  Next Steps:
 echo ============================================================
 echo  1. Open MetaTrader5 and login
-echo  2. Edit email_credentials.json (optional)
+echo  2. Edit src\configs\email_credentials.json (optional)
 echo  3. Run: python dashboard_app.py
 echo  4. Open browser: http://localhost:5000
 echo ============================================================

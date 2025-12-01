@@ -354,23 +354,37 @@ Gold Trading Bot Protection System
         return self.send_email(subject, body)
 
 
-def load_email_config(config_file: str = "email_config.json") -> Optional[EmailNotifier]:
+def load_email_config(config_file: str = "src/configs/email_config.json") -> Optional[EmailNotifier]:
     """
     Load email configuration from JSON file
     
     Args:
-        config_file: Path to email configuration file
+        config_file: Path to email configuration file (relative to project root)
         
     Returns:
         Configured EmailNotifier instance or None
     """
+    import os
+    
+    # Get project root directory
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
+    # Make config_file absolute if relative
+    if not os.path.isabs(config_file):
+        config_file = os.path.join(project_root, config_file)
+    
     try:
         # Load main config (SMTP settings)
         with open(config_file, 'r') as f:
             config = json.load(f)
         
         # Load credentials from separate file
-        credentials_file = config.get('credentials_file', 'email_credentials.json')
+        credentials_file = config.get('credentials_file', 'src/configs/email_credentials.json')
+        
+        # Make credentials_file absolute if relative
+        if not os.path.isabs(credentials_file):
+            credentials_file = os.path.join(project_root, credentials_file)
+        
         credentials = {}
         
         try:
@@ -404,13 +418,22 @@ def load_email_config(config_file: str = "email_config.json") -> Optional[EmailN
         return EmailNotifier()
 
 
-def create_email_config_template(output_file: str = "email_config.json"):
+def create_email_config_template(output_file: str = "src/configs/email_config.json"):
     """
     Create a template email configuration file
     
     Args:
-        output_file: Path where template will be saved
+        output_file: Path where template will be saved (relative to project root)
     """
+    import os
+    
+    # Get project root directory
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    
+    # Make output_file absolute if relative
+    if not os.path.isabs(output_file):
+        output_file = os.path.join(project_root, output_file)
+    
     template = {
         "smtp_server": "smtp.gmail.com",
         "smtp_port": 587,
@@ -421,6 +444,7 @@ def create_email_config_template(output_file: str = "email_config.json"):
     }
     
     try:
+        os.makedirs(os.path.dirname(output_file), exist_ok=True)
         with open(output_file, 'w') as f:
             json.dump(template, f, indent=4)
         print(f"✅ Email config template created: {output_file}")

@@ -11,7 +11,7 @@ from src.risk_manager import RiskManager
 from src.trade_logger import TradeLogger
 from src.parabolic_sar import ParabolicSAR
 from src.email_notifier import EmailNotifier, load_email_config
-from src.dashboard_server import DashboardServer
+from src.web_ui.dashboard_server import DashboardServer
 from src.circuit_breaker import CircuitBreaker
 
 
@@ -110,7 +110,7 @@ class TradingBot:
         
         # Load account data
         try:
-            with open('account_info.json', 'r') as f:
+            with open('logs/account_info.json', 'r') as f:
                 account_data = json.load(f)
                 self.account_balance = account_data.get('balance', 10000.0)
                 self.account_leverage = account_data.get('leverage', 0)

@@ -15,7 +15,7 @@ class CircuitBreaker:
     3. 70% losses in last 10 trades → pause 5 hours
     """
     
-    def __init__(self, trade_logger: TradeLogger, config_file: str = "protection_config.json"):
+    def __init__(self, trade_logger: TradeLogger, config_file: str = "src/configs/protection_config.json"):
         """
         Initialize Circuit Breaker
         
@@ -24,8 +24,13 @@ class CircuitBreaker:
             config_file: Path to configuration file
         """
         self.trade_logger = trade_logger
-        self.config_file = config_file
-        self.state_file = "circuit_breaker_state.json"
+        
+        # Get project root directory (parent of src/)
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        
+        # Make paths absolute
+        self.config_file = os.path.join(project_root, config_file) if not os.path.isabs(config_file) else config_file
+        self.state_file = os.path.join(project_root, "logs/circuit_breaker_state.json")
         
         # Load configuration
         self.config = self._load_config()
@@ -64,6 +69,7 @@ class CircuitBreaker:
                 pass
         else:
             # Create default config file
+            os.makedirs(os.path.dirname(self.config_file), exist_ok=True)
             with open(self.config_file, 'w') as f:
                 json.dump(default_config, f, indent=4)
             print(f"📝 Created default config: {self.config_file}")
@@ -92,6 +98,7 @@ class CircuitBreaker:
     
     def _save_state(self):
         """Save circuit breaker state to file"""
+        os.makedirs(os.path.dirname(self.state_file), exist_ok=True)
         with open(self.state_file, 'w') as f:
             json.dump(self.state, f, indent=4)
     

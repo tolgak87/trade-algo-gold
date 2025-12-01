@@ -1,11 +1,18 @@
 """
 Reset Circuit Breaker - Clean Start
 Clears circuit breaker state and optionally clears today's trade logs
+
+Usage: Run from project root directory
+    python scripts/reset_circuit_breaker.py
 """
 
 import os
+import sys
 import json
 from datetime import datetime
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def reset_circuit_breaker():
@@ -16,7 +23,7 @@ def reset_circuit_breaker():
     print("=" * 70)
     
     # 1. Reset circuit breaker state
-    state_file = "circuit_breaker_state.json"
+    state_file = "logs/circuit_breaker_state.json"
     
     if os.path.exists(state_file):
         os.remove(state_file)
@@ -34,7 +41,7 @@ def reset_circuit_breaker():
     
     if choice == "2":
         # Clear today's log
-        today_file = f"trade_logs/trades_{datetime.now().strftime('%Y_%m_%d')}.json"
+        today_file = f"logs/trade_logs/trades_{datetime.now().strftime('%Y_%m_%d')}.json"
         if os.path.exists(today_file):
             os.remove(today_file)
             print(f"✅ Today's trade log cleared: {today_file}")
@@ -45,7 +52,7 @@ def reset_circuit_breaker():
         # Clear all logs
         confirm = input("⚠️  Are you sure? This will delete ALL trade history! (yes/no): ").strip().lower()
         if confirm == "yes":
-            log_dir = "trade_logs"
+            log_dir = "logs/trade_logs"
             if os.path.exists(log_dir):
                 for file in os.listdir(log_dir):
                     if file.endswith(".json"):

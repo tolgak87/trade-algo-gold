@@ -1,17 +1,17 @@
 {
     "smtp_server": "smtp.gmail.com",
     "smtp_port": 587,
-    "credentials_file": "email_credentials.json",
+    "credentials_file": "src/configs/email_credentials.json",
     "_instructions": [
         "This file contains SMTP server settings.",
-        "Your actual email credentials are stored in email_credentials.json",
+        "Your actual email credentials are stored in src/configs/email_credentials.json",
         "The credentials file is in .gitignore for security",
         "",
         "For Gmail:",
         "1. Enable 2-Factor Authentication on your Google Account",
         "2. Go to: https://myaccount.google.com/apppasswords",
         "3. Create an 'App Password' for 'Mail'",
-        "4. Edit email_credentials.json with:",
+        "4. Edit src/configs/email_credentials.json with:",
         "   - Your Gmail address in sender_email",
         "   - The 16-digit app password (not your regular Gmail password)",
         "   - Recipient email address (can be same as sender)"

@@ -1,15 +1,9 @@
 # Sensitive files
-demo.txt
-account_info.json
-email_credentials.json
+/src/configs/demo.txt
+/src/configs/email_credentials.json
 
-# Protection system state
-circuit_breaker_state.json
-
-# Logs and data
+# Logs and data directory
 /logs/
-/trade_logs/
-/backtest_results/
 
 # Python cache
 /src/__pycache__/

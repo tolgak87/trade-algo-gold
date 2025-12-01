@@ -32,8 +32,8 @@ class DashboardServer:
         
         # Flask app setup
         self.app = Flask(__name__, 
-                         template_folder='../templates',
-                         static_folder='../static')
+                         template_folder='templates',
+                         static_folder='static')
         self.app.config['SECRET_KEY'] = 'gold-trading-bot-secret-2025'
         
         # SocketIO setup with threading

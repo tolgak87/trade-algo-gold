@@ -1,7 +1,16 @@
 """
 Test script for Circuit Breaker functionality
 Tests loss detection and pause mechanisms
+
+Usage: Run from project root directory
+    python scripts/test_circuit_breaker.py
 """
+
+import os
+import sys
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.circuit_breaker import CircuitBreaker
 from src.trade_logger import TradeLogger

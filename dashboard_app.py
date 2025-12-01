@@ -6,7 +6,7 @@ Runs trading bot with real-time web dashboard
 """
 
 from src.trading_bot import TradingBot
-from src.dashboard_server import initialize_dashboard
+from src.web_ui.dashboard_server import initialize_dashboard
 from datetime import datetime, timedelta
 import time
 
@@ -35,7 +35,7 @@ def run_backtest_mode():
     print("🔬 GOLD TRADING BOT - BACKTEST MODE")
     print("="*70)
     
-    from backtest.backtest_engine import BacktestEngine
+    from src.backtest.backtest_engine import BacktestEngine
     
     # Backtest configuration
     end_date = datetime.now()

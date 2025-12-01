@@ -1,10 +1,18 @@
 """
 Create demo trades for testing Circuit Breaker
 This creates sample closed trades to test loss detection
+
+Usage: Run from project root directory
+    python scripts/create_demo_trades.py
 """
 
+import os
+import sys
 import json
 from datetime import datetime, timedelta
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 
 def create_demo_trades():
@@ -133,7 +141,7 @@ def create_demo_trades():
 
 def save_demo_trades(trades, scenario_name):
     """Save demo trades to today's log file"""
-    log_file = f"trade_logs/trades_{datetime.now().strftime('%Y_%m_%d')}.json"
+    log_file = f"logs/trade_logs/trades_{datetime.now().strftime('%Y_%m_%d')}.json"
     
     # Read existing trades
     try:
@@ -160,7 +168,7 @@ def save_demo_trades(trades, scenario_name):
 
 def clean_demo_trades():
     """Remove demo trades from today's log"""
-    log_file = f"trade_logs/trades_{datetime.now().strftime('%Y_%m_%d')}.json"
+    log_file = f"logs/trade_logs/trades_{datetime.now().strftime('%Y_%m_%d')}.json"
     
     try:
         with open(log_file, 'r') as f:

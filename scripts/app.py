@@ -1,3 +1,16 @@
+"""
+Main application entry point for Gold Trading Bot
+
+Usage: Run from project root directory
+    python scripts/app.py
+"""
+
+import os
+import sys
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.trading_bot import TradingBot
 
 

@@ -409,5 +409,5 @@ class BacktestEngine:
         print(f"\n✅ Backtest complete!")
         
         # Import here to avoid circular dependency
-        from backtest.backtest_result import BacktestResult
+        from src.backtest.backtest_result import BacktestResult
         return BacktestResult(self)

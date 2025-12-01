@@ -39,7 +39,7 @@ def collect_account_info():
     
     # Get the correct path (script directory)
     script_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    account_file = os.path.join(script_dir, 'account_info.json')
+    account_file = os.path.join(script_dir, 'logs', 'account_info.json')
     
     # Save to JSON file
     try:
