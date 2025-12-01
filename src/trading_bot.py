@@ -123,7 +123,7 @@ class TradingBot:
     def _initialize_logger(self) -> bool:
         """Initialize trade logging system"""
         print("[3/6] Initializing trade logging system...")
-        self.trade_logger = TradeLogger(log_directory="trade_logs")
+        self.trade_logger = TradeLogger(log_directory="logs/trade_logs")
         self.stats = self.trade_logger.get_trade_statistics()
         print("✅ Trade logging enabled")
         return True
