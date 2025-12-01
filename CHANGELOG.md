@@ -49,6 +49,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
+### 🧪 Planned for v1.5 - Testing & Quality
+- [ ] **Unit Tests**: Comprehensive unit test suite for critical components
+  - Risk calculation tests (position sizing, lot calculation)
+  - Circuit breaker logic tests (consecutive losses, percentage losses)
+  - Daily loss limit tests (threshold detection, balance tracking)
+  - Trade logger tests (P/L calculation, statistics)
+  - Config loading tests (path resolution, file creation)
+- [ ] **Regression Tests**: Automated regression testing suite
+  - Risk management functionality regression
+  - Circuit breaker behavior regression
+  - Daily loss limit logic regression
+  - Configuration loading regression
+  - Trade logging system regression
+- [ ] **Test Documentation**: Test case documentation
+  - Test scenarios and expected results
+  - Test data preparation guidelines
+  - Manual testing procedures
+  - Integration test specifications
+
 ### 🤖 Planned for v1.
 - [ ] **MOST Indicator Integration**: Implementation of MOST (Moving Stop Loss) indicator for dynamic trend analysis
 - [ ] **Multi-Indicator Strategy**: Combined signal generation using both MOST and Parabolic SAR indicators for enhanced trade accuracy
