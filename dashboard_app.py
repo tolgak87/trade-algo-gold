@@ -9,12 +9,52 @@ from src.trading_bot import TradingBot
 from src.web_ui.dashboard_server import initialize_dashboard
 from datetime import datetime, timedelta
 import time
+import json
+import os
 
 # ============================================================
 # 🎚️ TOGGLE BACKTEST MODE HERE
 # ============================================================
 BACKTEST_MODE = False  # Set to True to run backtest instead of live trading
 # ============================================================
+
+
+def load_trade_config():
+    """
+    Load trading configuration from JSON file
+    Returns config dict with trading parameters
+    """
+    # Get project root (dashboard_app.py is in project root)
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(project_root, 'src', 'configs', 'trade_config.json')
+    
+    try:
+        with open(config_path, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+            print(f"✅ Loaded trading configuration from: {config_path}")
+            return config
+    except FileNotFoundError:
+        print(f"⚠️  Config file not found: {config_path}")
+        print("   Using default values...")
+        return {
+            "trading": {
+                "desired_signal": "BUY",
+                "risk_percentage": 1.0,
+                "signal_check_interval": 30,
+                "position_check_interval": 5
+            }
+        }
+    except json.JSONDecodeError as e:
+        print(f"❌ Invalid JSON in config file: {e}")
+        print("   Using default values...")
+        return {
+            "trading": {
+                "desired_signal": "BUY",
+                "risk_percentage": 1.0,
+                "signal_check_interval": 30,
+                "position_check_interval": 5
+            }
+        }
 
 
 def main():
@@ -116,11 +156,14 @@ def run_live_trading_mode():
     print("\n[Step 3/3] Starting automated trading cycle...")
     bot.display_status()
     
-    # Configuration
-    desired_signal = 'BUY'  # Change to 'SELL' if you want to wait for sell signals
-    risk_percentage = 1.0   # Risk 1% per trade
-    signal_check_interval = 30  # Check for signals every 30 seconds
-    position_check_interval = 5  # Monitor position every 5 seconds
+    # Load configuration from file
+    config = load_trade_config()
+    trading_config = config.get('trading', {})
+    
+    desired_signal = trading_config.get('desired_signal', 'BUY')
+    risk_percentage = trading_config.get('risk_percentage', 1.0)
+    signal_check_interval = trading_config.get('signal_check_interval', 30)
+    position_check_interval = trading_config.get('position_check_interval', 5)
     
     print(f"\n📋 Trading Configuration:")
     print(f"   Target Signal: {desired_signal}")

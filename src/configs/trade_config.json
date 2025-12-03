@@ -1,0 +1,14 @@
+{
+    "trading": {
+        "desired_signal": "BUY",
+        "risk_percentage": 1.0,
+        "signal_check_interval": 30,
+        "position_check_interval": 5,
+        "_comments": {
+            "desired_signal": "Trade direction: 'BUY' for long positions, 'SELL' for short positions",
+            "risk_percentage": "Percentage of account balance to risk per trade (recommended: 1-2%)",
+            "signal_check_interval": "How often to check for new trading signals (seconds)",
+            "position_check_interval": "How often to monitor open positions (seconds)"
+        }
+    }
+}
