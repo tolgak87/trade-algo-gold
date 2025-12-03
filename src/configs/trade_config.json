@@ -1,6 +1,6 @@
 {
     "trading": {
-        "desired_signal": "BUY",
+        "desired_signal": "BOTH",
         "risk_percentage": 1.0,
         "signal_check_interval": 5,
         "position_check_interval": 5,

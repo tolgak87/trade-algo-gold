@@ -218,13 +218,52 @@ Edit `trade_config.json`:
 ### Change Trading Direction
 
 Edit `trade_config.json`:
+
+**Only Long Positions (Uptrends):**
 ```json
 {
     "trading": {
-        "desired_signal": "SELL"   // Only trade sell signals
+        "desired_signal": "BUY"   // Wait for uptrend, open BUY only
     }
 }
 ```
+
+**Only Short Positions (Downtrends):**
+```json
+{
+    "trading": {
+        "desired_signal": "SELL"  // Wait for downtrend, open SELL only
+    }
+}
+```
+
+**Both Directions (Recommended):**
+```json
+{
+    "trading": {
+        "desired_signal": "BOTH"  // Trade any trend direction
+    }
+}
+```
+
+**How BOTH Mode Works:**
+- 🔼 **UPTREND detected** → Opens BUY position
+  - Stop Loss at SAR value (below price)
+  - Take Profit calculated based on risk
+  - Closes if:
+    - ✅ Take Profit hit
+    - ❌ Stop Loss hit
+    - 📉 SAR reverses to DOWNTREND
+  
+- 🔽 **DOWNTREND detected** → Opens SELL position
+  - Stop Loss at SAR value (above price)
+  - Take Profit calculated based on risk
+  - Closes if:
+    - ✅ Take Profit hit
+    - ❌ Stop Loss hit
+    - 📈 SAR reverses to UPTREND
+
+- 🔄 After position closes → Waits for next signal (any direction)
 
 ### Change Trading Symbol (e.g., Trade EUR/USD instead of Gold)
 

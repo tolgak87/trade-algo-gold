@@ -431,19 +431,22 @@ class TradingBot:
     
     def wait_for_signal(self, desired_signal: str = 'BUY', 
                        check_interval: int = 30,
-                       max_wait_minutes: int = 0) -> bool:
+                       max_wait_minutes: int = 0) -> Optional[str]:
         """
         Wait for a specific trading signal
         
         Args:
-            desired_signal: 'BUY' or 'SELL' signal to wait for
+            desired_signal: 'BUY', 'SELL', or 'BOTH' signal to wait for
             check_interval: Seconds between checks (default: 30)
             max_wait_minutes: Maximum minutes to wait (0 = infinite)
             
         Returns:
-            True if signal received, False if timeout
+            String with signal type ('BUY' or 'SELL') if signal received, None if timeout
         """
-        print(f"\n⏳ Waiting for {desired_signal} signal...")
+        if desired_signal == 'BOTH':
+            print(f"\n⏳ Waiting for any signal (BUY or SELL)...")
+        else:
+            print(f"\n⏳ Waiting for {desired_signal} signal...")
         print(f"   Check interval: {check_interval} seconds")
         if max_wait_minutes > 0:
             print(f"   Max wait time: {max_wait_minutes} minutes")
@@ -477,7 +480,8 @@ class TradingBot:
                 if self.dashboard:
                     self._update_dashboard_account()
                     self._update_dashboard_sar()
-                    self.dashboard.update_bot_status(f"Waiting for {desired_signal} signal - Check #{check_count}")
+                    wait_msg = "any signal" if desired_signal == 'BOTH' else f"{desired_signal} signal"
+                    self.dashboard.update_bot_status(f"Waiting for {wait_msg} - Check #{check_count}")
                     self.dashboard.update_signal({
                         'type': current_signal if current_signal else 'HOLD',
                         'reason': f"Current: {current_signal}, Waiting for: {desired_signal}",
@@ -489,14 +493,15 @@ class TradingBot:
                 if current_signal:
                     timestamp = datetime.now().strftime("%H:%M:%S")
                     
-                    if current_signal == desired_signal:
-                        print(f"\n✅ [{timestamp}] {desired_signal} signal received!")
-                        print(f"   Symbol: {self.symbol}")
+                    # Check if signal matches (BOTH accepts any signal)
+                    signal_match = (desired_signal == 'BOTH') or (current_signal == desired_signal)
+                    
+                    if signal_match:
+                        print(f"\n✅ [{timestamp}] {current_signal} SIGNAL DETECTED!")
+                        print(f"   SAR Value: {self.sar_info['sar_value']}")
                         print(f"   Current Price: {self.sar_info['current_price']}")
-                        print(f"   SAR Value (Stop Loss): {self.sar_info['sar_value']}")
-                        print(f"   Trend: {self.sar_info['trend']}")
                         print(f"   Total checks: {check_count}")
-                        return True
+                        return current_signal
                     else:
                         # Display detailed info while waiting
                         print(f"\n⏳ [{timestamp}] Check #{check_count}: Current signal is {current_signal} (waiting for {desired_signal})")
@@ -512,16 +517,18 @@ class TradingBot:
                 if max_wait_minutes > 0:
                     elapsed_minutes = (time.time() - start_time) / 60
                     if elapsed_minutes >= max_wait_minutes:
-                        print(f"\n⏰ Timeout: {max_wait_minutes} minutes elapsed without {desired_signal} signal")
-                        return False
+                        print(f"\n⏰ Timeout reached: {max_wait_minutes} minutes")
+                        signal_msg = "signal" if desired_signal == 'BOTH' else f"{desired_signal} signal"
+                        print(f"   No {signal_msg} detected")
+                        return None
                 
                 # Wait before next check
                 time.sleep(check_interval)
                 
         except KeyboardInterrupt:
-            print(f"\n\n⚠️  Monitoring stopped by user")
-            print(f"   Total checks performed: {check_count}")
-            return False
+            print(f"\n\n⚠️  Signal waiting stopped by user")
+            print(f"   Total checks: {check_count}")
+            return None
     
     def auto_trade_on_signal(self, desired_signal: str = 'BUY',
                             risk_percentage: float = 1.0,
@@ -532,7 +539,7 @@ class TradingBot:
         Wait for signal and automatically execute trade
         
         Args:
-            desired_signal: 'BUY' or 'SELL' signal to wait for
+            desired_signal: 'BUY', 'SELL', or 'BOTH' signal to wait for
             risk_percentage: Percentage of account to risk
             use_sar_sl: Use SAR-based stop loss
             check_interval: Seconds between checks (default: 30)
@@ -542,9 +549,10 @@ class TradingBot:
             Trade result dictionary or None if timeout
         """
         # Wait for signal
-        if self.wait_for_signal(desired_signal, check_interval, max_wait_minutes):
-            print(f"\n🚀 Executing {desired_signal} trade...")
-            return self.execute_trade(desired_signal, risk_percentage, use_sar_sl)
+        detected_signal = self.wait_for_signal(desired_signal, check_interval, max_wait_minutes)
+        if detected_signal:
+            print(f"\n🚀 Executing {detected_signal} trade...")
+            return self.execute_trade(detected_signal, risk_percentage, use_sar_sl)
         else:
             print(f"❌ No trade executed - signal not received")
             return None
@@ -969,7 +977,8 @@ class TradingBot:
         4. Repeat
         
         Args:
-            desired_signal: 'BUY' or 'SELL' signal to wait for
+            desired_signal: 'BUY', 'SELL', or 'BOTH' signal to wait for
+                           'BOTH' = trade both directions (UPTREND→BUY, DOWNTREND→SELL)
             risk_percentage: Percentage of account to risk
             signal_check_interval: Seconds between signal checks (default: 30)
             position_check_interval: Seconds between position checks (default: 5)
@@ -980,7 +989,10 @@ class TradingBot:
         print("\n" + "=" * 60)
         print("🤖 FULL AUTO-TRADING CYCLE STARTED")
         print("=" * 60)
-        print(f"   Signal: {desired_signal}")
+        if desired_signal == 'BOTH':
+            print(f"   Signal: BOTH (BUY uptrends, SELL downtrends)")
+        else:
+            print(f"   Signal: {desired_signal} only")
         print(f"   Risk: {risk_percentage}% of account")
         print(f"   SAR-based Stop Loss: Enabled")
         print(f"   Emergency SL Protection: Enabled")
@@ -991,13 +1003,18 @@ class TradingBot:
         try:
             while True:
                 # Phase 1: Wait for signal
-                print(f"\n🔍 PHASE 1: Waiting for {desired_signal} signal...")
-                if not self.wait_for_signal(desired_signal, signal_check_interval):
+                if desired_signal == 'BOTH':
+                    print(f"\n🔍 PHASE 1: Waiting for any signal (BUY or SELL)...")
+                else:
+                    print(f"\n🔍 PHASE 1: Waiting for {desired_signal} signal...")
+                
+                detected_signal = self.wait_for_signal(desired_signal, signal_check_interval)
+                if not detected_signal:
                     break
                 
-                # Phase 2: Execute trade
-                print(f"\n💰 PHASE 2: Executing {desired_signal} trade...")
-                result = self.execute_trade(desired_signal, risk_percentage, use_sar_sl=True)
+                # Phase 2: Execute trade with the detected signal
+                print(f"\n💰 PHASE 2: Executing {detected_signal} trade...")
+                result = self.execute_trade(detected_signal, risk_percentage, use_sar_sl=True)
                 
                 if not result["success"]:
                     print(f"❌ Trade execution failed: {result.get('error')}")
@@ -1022,7 +1039,7 @@ class TradingBot:
                     stop_loss=stop_loss,
                     take_profit=take_profit,
                     entry_price=entry_price,
-                    position_type=desired_signal,
+                    position_type=detected_signal,
                     check_interval=position_check_interval
                 )
                 
