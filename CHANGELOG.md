@@ -46,18 +46,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
   - Percentage-based (default) or fixed dollar amount
   - Email notification on limit breach
   - Visual display of remaining loss allowance
-- **Project Restructuring**: Organized codebase for better maintainability
-  - Created `src/configs/` for all configuration files
-  - Created `src/web_ui/` for dashboard components
-  - Created `logs/` for runtime logs
-  - Created `scripts/` for utility scripts
-  - Created `docs/` for documentation
-  - Updated all path references to use absolute paths
-- **Configuration Externalization**: Trading parameters moved to external config files
-  - Created `src/configs/trade_config.json` for trading parameters
-  - Moved `desired_signal`, `risk_percentage`, interval settings to config
-  - Added config loading with error handling and default values
-  - Improved code maintainability - no need to edit Python code for config changes
+
 
 ## [Unreleased]
 

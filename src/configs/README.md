@@ -19,6 +19,15 @@ This directory contains all configuration files for the Gold Trading Bot. These 
         "risk_percentage": 1.0,            // Risk per trade (% of account balance)
         "signal_check_interval": 30,       // Seconds between signal checks
         "position_check_interval": 5       // Seconds between position monitoring
+    },
+    "symbols": {
+        "priority_list": [
+            "XAUUSD",                      // Gold symbols in priority order
+            "XAUUSD.",
+            "XAUUSD.m",
+            "GOLD",
+            "GOLD."
+        ]
     }
 }
 ```
@@ -37,6 +46,16 @@ This directory contains all configuration files for the Gold Trading Bot. These 
 
 - **signal_check_interval**: How often to check for new trade signals (seconds)
 - **position_check_interval**: How often to monitor open positions (seconds)
+
+- **symbols.priority_list**: 
+  - List of symbols to search for in MT5 account
+  - Bot uses **first available** symbol found
+  - Add other symbols for different markets:
+    ```json
+    "priority_list": ["EURUSD", "GBPUSD", "USDJPY"]  // Forex
+    "priority_list": ["BTCUSD", "ETHUSD"]            // Crypto
+    "priority_list": ["US30", "NAS100"]              // Indices
+    ```
 
 **⚠️ Important Notes:**
 
@@ -136,6 +155,35 @@ Edit `trade_config.json`:
         "desired_signal": "SELL"   // Only trade sell signals
     }
 }
+```
+
+### Change Trading Symbol (e.g., Trade EUR/USD instead of Gold)
+
+Edit `trade_config.json`:
+```json
+{
+    "symbols": {
+        "priority_list": ["EURUSD", "EUR/USD", "EURUSD."]  // Forex pair
+    }
+}
+```
+
+**Popular Symbol Examples:**
+```json
+// Gold (default)
+"priority_list": ["XAUUSD", "XAUUSD.", "GOLD"]
+
+// EUR/USD Forex
+"priority_list": ["EURUSD", "EUR/USD"]
+
+// GBP/USD Forex  
+"priority_list": ["GBPUSD", "GBP/USD"]
+
+// Bitcoin
+"priority_list": ["BTCUSD", "BITCOIN"]
+
+// US30 Index
+"priority_list": ["US30", "DJ30", "DOWJONES"]
 ```
 
 ### Adjust Daily Loss Limit

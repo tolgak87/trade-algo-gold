@@ -1,30 +1,79 @@
 import MetaTrader5 as mt5
 from typing import Optional, List
+import json
+import os
 
 class SymbolDetector:
     """
-    Auto-detection of gold trading symbols in MetaTrader 5.
-    Supports multiple gold symbol variations.
+    Auto-detection of trading symbols in MetaTrader 5.
+    Supports multiple symbol variations loaded from config.
     """
     
-    GOLD_SYMBOLS = [
-        "XAUUSD",
-        "XAUUSD.",
-        "XAUUSD.m",
-        "GOLD",
-        "GOLD."
-    ]
+    def __init__(self, symbols_list: Optional[List[str]] = None):
+        """
+        Initialize symbol detector.
+        
+        Args:
+            symbols_list: Optional list of symbols to search for.
+                         If None, loads from config file.
+        """
+        if symbols_list is None:
+            symbols_list = self._load_symbols_from_config()
+        
+        self.SYMBOLS = symbols_list
     
-    def __init__(self):
         self.detected_symbol: Optional[str] = None
         self.available_symbols: List[str] = []
     
-    def detect_gold_symbol(self) -> Optional[str]:
+    def _load_symbols_from_config(self) -> List[str]:
         """
-        Automatically detect which gold symbol is available in the MT5 account.
+        Load symbol priority list from config file.
         
         Returns:
-            str: The detected gold symbol name, or None if not found
+            List[str]: List of symbols in priority order
+        """
+        try:
+            # Get project root (go up 2 levels from src/symbol_detector.py)
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            project_root = os.path.dirname(current_dir)
+            config_path = os.path.join(project_root, 'configs', 'trade_config.json')
+            
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                symbols = config.get('symbols', {}).get('priority_list', [])
+                
+                if symbols:
+                    print(f"✅ Loaded {len(symbols)} symbols from config: {', '.join(symbols)}")
+                    return symbols
+                else:
+                    print("⚠️  No symbols found in config, using defaults")
+                    return self._get_default_symbols()
+        except Exception as e:
+            print(f"⚠️  Failed to load symbols from config: {e}")
+            print("   Using default gold symbols...")
+            return self._get_default_symbols()
+    
+    def _get_default_symbols(self) -> List[str]:
+        """
+        Get default gold symbols as fallback.
+        
+        Returns:
+            List[str]: Default gold symbol list
+        """
+        return [
+            "XAUUSD",
+            "XAUUSD.",
+            "XAUUSD.m",
+            "GOLD",
+            "GOLD."
+        ]
+    
+    def detect_symbol(self) -> Optional[str]:
+        """
+        Automatically detect which symbol is available in the MT5 account.
+        
+        Returns:
+            str: The detected symbol name, or None if not found
         """
         if not mt5.initialize():
             print(f"MT5 initialization failed, error code = {mt5.last_error()}")
@@ -40,13 +89,14 @@ class SymbolDetector:
         # Create a set of available symbol names for faster lookup
         available_symbol_names = {symbol.name for symbol in all_symbols}
         
-        # Check each gold symbol variant
-        for gold_symbol in self.GOLD_SYMBOLS:
-            if gold_symbol in available_symbol_names:
-                self.available_symbols.append(gold_symbol)
+        # Check each symbol variant in priority order
+        for symbol in self.SYMBOLS:
+            if symbol in available_symbol_names:
+                self.available_symbols.append(symbol)
         
         if not self.available_symbols:
-            print("❌ No gold symbols found in your MT5 account")
+            print(f"❌ None of the configured symbols found in your MT5 account")
+            print(f"   Searched for: {', '.join(self.SYMBOLS)}")
             mt5.shutdown()
             return None
         
@@ -64,12 +114,32 @@ class SymbolDetector:
         
         return self.detected_symbol
     
-    def get_all_available_gold_symbols(self) -> List[str]:
+    def detect_gold_symbol(self) -> Optional[str]:
         """
-        Get list of all available gold symbols.
+        Backward compatibility method.
+        Calls detect_symbol().
         
         Returns:
-            List[str]: List of available gold symbol names
+            str: The detected symbol name, or None if not found
+        """
+        return self.detect_symbol()
+    
+    def get_all_available_symbols(self) -> List[str]:
+        """
+        Get list of all available symbols.
+        
+        Returns:
+            List[str]: List of available symbol names
+        """
+        return self.available_symbols
+    
+    def get_all_available_gold_symbols(self) -> List[str]:
+        """
+        Backward compatibility method.
+        Get list of all available symbols.
+        
+        Returns:
+            List[str]: List of available symbol names
         """
         return self.available_symbols
     
@@ -159,13 +229,17 @@ def main():
     """
     Example usage of SymbolDetector
     """
+    # Load symbols from config (default behavior)
     detector = SymbolDetector()
     
-    # Detect gold symbol
-    detected = detector.detect_gold_symbol()
+    # Or specify custom symbols
+    # detector = SymbolDetector(symbols_list=["EURUSD", "GBPUSD", "USDJPY"])
+    
+    # Detect symbol
+    detected = detector.detect_symbol()
     
     if detected:
-        print(f"\n✅ Successfully detected gold symbol: {detected}")
+        print(f"\n✅ Successfully detected symbol: {detected}")
         
         # Verify if tradeable
         if detector.verify_symbol_tradeable():
@@ -173,12 +247,12 @@ def main():
         else:
             print(f"⚠️ {detected} is not tradeable")
         
-        # Get all available gold symbols
-        all_gold = detector.get_all_available_gold_symbols()
-        if len(all_gold) > 1:
-            print(f"\nℹ️ Other available gold symbols: {', '.join(all_gold[1:])}")
+        # Get all available symbols
+        all_available = detector.get_all_available_symbols()
+        if len(all_available) > 1:
+            print(f"\nℹ️ Other available symbols: {', '.join(all_available[1:])}")
     else:
-        print("\n❌ Failed to detect gold symbol")
+        print("\n❌ Failed to detect symbol")
     
     mt5.shutdown()
 

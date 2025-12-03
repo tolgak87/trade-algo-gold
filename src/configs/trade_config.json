@@ -5,10 +5,22 @@
         "signal_check_interval": 30,
         "position_check_interval": 5,
         "_comments": {
-            "desired_signal": "Trade direction: 'BUY' for long positions, 'SELL' for short positions",
+            "desired_signal": "Trade direction: 'BUY' for long positions, 'SELL' for short positions, 'BOTH' for both directions",
             "risk_percentage": "Percentage of account balance to risk per trade (recommended: 1-2%)",
             "signal_check_interval": "How often to check for new trading signals (seconds)",
             "position_check_interval": "How often to monitor open positions (seconds)"
+        }
+    },
+    "symbols": {
+        "priority_list": [
+            "XAUUSD",
+            "XAUUSD.",
+            "XAUUSD.m",
+            "GOLD",
+            "GOLD."
+        ],
+        "_comments": {
+            "priority_list": "List of trading symbols to search for in order of priority. First available symbol will be selected. Examples: ['EURUSD'] for forex, ['BTCUSD'] for crypto, ['US30'] for indices"
         }
     }
 }
