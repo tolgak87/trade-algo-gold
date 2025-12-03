@@ -50,7 +50,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 
 ## [Unreleased]
 
-### 🧪 Planned for v1.5 - Testing & Quality
+### 🧪 Planned for v1.5 - Create Broker Interface
+- [ ] **Create MQL Code**: 
+  - Create MQL5 code for trade and get data from MT5 tool
+  - Create MQL4 code for trade and get data from MT4 tool
+  - Add MQL codes to text file
+- [ ] **Modify Python Code**: 
+  - Python code will get data from MT and manipulate it
+  - Send trade transaction to MT4 or MT5 by choosing it from trade_config.json
+  - Watches trades on MT, take action if neccessary (Like change trend or lower the SL value, etc.)
+
+
+### 🧪 Planned for v1. - Testing & Quality
 - [ ] **Unit Tests**: Comprehensive unit test suite for critical components
   - Risk calculation tests (position sizing, lot calculation)
   - Circuit breaker logic tests (consecutive losses, percentage losses)
