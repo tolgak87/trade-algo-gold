@@ -88,13 +88,13 @@ class TradingBot:
         return True
     
     def _detect_symbol(self) -> bool:
-        """Detect available gold symbol"""
-        print("\n[1/6] Detecting gold symbols...")
+        """Detect available trading symbol from config"""
+        print("\n[1/6] Detecting trading symbols...")
         self.detector = SymbolDetector()
-        self.symbol = self.detector.detect_gold_symbol()
+        self.symbol = self.detector.detect_symbol()
         
         if not self.symbol:
-            print("❌ Failed to detect gold symbol. Exiting...")
+            print("❌ Failed to detect trading symbol. Exiting...")
             return False
         
         return True

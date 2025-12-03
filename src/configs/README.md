@@ -32,6 +32,75 @@ This directory contains all configuration files for the Gold Trading Bot. These 
 }
 ```
 
+**How to Change Trading Product:**
+
+1. Open `available_symbols.json` to see all available products
+2. Find the product you want to trade (e.g., EURUSD, BITCOIN, US30)
+3. Copy the symbol list
+4. Paste into `trade_config.json` -> `symbols.priority_list`
+5. Save and restart bot
+
+**Example - Switch from Gold to EUR/USD:**
+```json
+// Copy from available_symbols.json -> "EURUSD" section:
+"symbols": {
+    "priority_list": [
+        "EURUSD",
+        "EUR/USD",
+        "EURUSD.",
+        "EURUSD.m"
+    ]
+}
+```
+
+---
+
+### 1️⃣.A `available_symbols.json` - Symbol Library
+
+**Purpose:** Pre-configured symbol lists for all major trading products
+
+**Contents:**
+- **Precious Metals:** GOLD, SILVER
+- **Major Forex:** EURUSD, GBPUSD, USDJPY, AUDUSD, USDCAD, NZDUSD
+- **Cross Pairs:** EURGBP, EURJPY, GBPJPY
+- **Crypto:** BITCOIN, ETHEREUM
+- **Indices:** US30, NAS100, SPX500
+- **Commodities:** OIL, BRENT, NATURALGAS
+
+**How to Use:**
+1. Open `available_symbols.json`
+2. Find your desired product (e.g., "BITCOIN")
+3. Copy the array: `["BTCUSD", "BTC/USD", "BITCOIN", "BTCUSD.m"]`
+4. Open `trade_config.json`
+5. Paste into `symbols.priority_list`
+6. Save and restart bot
+
+**Quick Copy Examples:**
+
+For **Gold** (default):
+```json
+"priority_list": ["XAUUSD", "XAUUSD.", "XAUUSD.m", "GOLD", "GOLD."]
+```
+
+For **Bitcoin**:
+```json
+"priority_list": ["BTCUSD", "BTC/USD", "BITCOIN", "BTCUSD.m"]
+```
+
+For **US30** (Dow Jones):
+```json
+"priority_list": ["US30", "DJ30", "DOWJONES", "US30.", "US30.m"]
+```
+
+For **EUR/USD**:
+```json
+"priority_list": ["EURUSD", "EUR/USD", "EURUSD.", "EURUSD.m"]
+```
+
+---
+
+### 1️⃣.B Trading Configuration Details
+
 **How to Modify:**
 
 - **desired_signal**: 

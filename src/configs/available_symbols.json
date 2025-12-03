@@ -1,0 +1,141 @@
+{
+    "_info": "Symbol library for different trading products. Copy desired symbol list to trade_config.json -> symbols.priority_list",
+    
+    "GOLD": [
+        "XAUUSD",
+        "XAUUSD.",
+        "XAUUSD.m",
+        "GOLD",
+        "GOLD."
+    ],
+    
+    "SILVER": [
+        "XAGUSD",
+        "XAGUSD.",
+        "SILVER",
+        "SILVER."
+    ],
+    
+    "EURUSD": [
+        "EURUSD",
+        "EUR/USD",
+        "EURUSD.",
+        "EURUSD.m"
+    ],
+    
+    "GBPUSD": [
+        "GBPUSD",
+        "GBP/USD",
+        "GBPUSD.",
+        "GBPUSD.m"
+    ],
+    
+    "USDJPY": [
+        "USDJPY",
+        "USD/JPY",
+        "USDJPY.",
+        "USDJPY.m"
+    ],
+    
+    "AUDUSD": [
+        "AUDUSD",
+        "AUD/USD",
+        "AUDUSD.",
+        "AUDUSD.m"
+    ],
+    
+    "USDCAD": [
+        "USDCAD",
+        "USD/CAD",
+        "USDCAD.",
+        "USDCAD.m"
+    ],
+    
+    "NZDUSD": [
+        "NZDUSD",
+        "NZD/USD",
+        "NZDUSD.",
+        "NZDUSD.m"
+    ],
+    
+    "EURGBP": [
+        "EURGBP",
+        "EUR/GBP",
+        "EURGBP.",
+        "EURGBP.m"
+    ],
+    
+    "EURJPY": [
+        "EURJPY",
+        "EUR/JPY",
+        "EURJPY.",
+        "EURJPY.m"
+    ],
+    
+    "GBPJPY": [
+        "GBPJPY",
+        "GBP/JPY",
+        "GBPJPY.",
+        "GBPJPY.m"
+    ],
+    
+    "BITCOIN": [
+        "BTCUSD",
+        "BTC/USD",
+        "BITCOIN",
+        "BTCUSD.m"
+    ],
+    
+    "ETHEREUM": [
+        "ETHUSD",
+        "ETH/USD",
+        "ETHEREUM",
+        "ETHUSD.m"
+    ],
+    
+    "US30": [
+        "US30",
+        "DJ30",
+        "DOWJONES",
+        "US30.",
+        "US30.m"
+    ],
+    
+    "NAS100": [
+        "NAS100",
+        "NASDAQ",
+        "US100",
+        "NAS100.",
+        "NAS100.m"
+    ],
+    
+    "SPX500": [
+        "SPX500",
+        "SP500",
+        "US500",
+        "SPX500.",
+        "SPX500.m"
+    ],
+    
+    "OIL": [
+        "USOIL",
+        "WTI",
+        "CL",
+        "USOIL.",
+        "CRUDE"
+    ],
+    
+    "BRENT": [
+        "UKOIL",
+        "BRENT",
+        "UKOIL.",
+        "BRENT."
+    ],
+    
+    "NATURALGAS": [
+        "NATGAS",
+        "NG",
+        "NATURALGAS",
+        "NATGAS."
+    ]
+}

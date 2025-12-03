@@ -36,7 +36,7 @@ class SymbolDetector:
             # Get project root (go up 2 levels from src/symbol_detector.py)
             current_dir = os.path.dirname(os.path.abspath(__file__))
             project_root = os.path.dirname(current_dir)
-            config_path = os.path.join(project_root, 'configs', 'trade_config.json')
+            config_path = os.path.join(project_root, 'src', 'configs', 'trade_config.json')
             
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
