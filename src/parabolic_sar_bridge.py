@@ -1,8 +1,3 @@
-"""
-LEGACY: Parabolic SAR with MetaTrader5 Direct API
-For MQL Bridge version, use parabolic_sar_bridge.py
-"""
-import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime
 from typing import Optional, Tuple
@@ -11,28 +6,30 @@ from typing import Optional, Tuple
 class ParabolicSAR:
     """
     Parabolic SAR (Stop and Reverse) Indicator
-    Legacy implementation with MT5 Python API
+    Real-time implementation with MQL Bridge data
     """
     
-    def __init__(self, symbol: str, timeframe=None, 
+    def __init__(self, symbol: str, bridge, timeframe: int = 15, 
                  acceleration: float = 0.02, maximum: float = 0.2):
         """
         Initialize Parabolic SAR indicator
         
         Args:
             symbol: Trading symbol (e.g., XAUUSD)
-            timeframe: MT5 timeframe constant (e.g., mt5.TIMEFRAME_M15)
+            bridge: MQLBridge instance for broker communication
+            timeframe: Timeframe in minutes (default: 15)
             acceleration: Acceleration factor (default: 0.02)
             maximum: Maximum acceleration (default: 0.2)
         """
         self.symbol = symbol
-        self.timeframe = timeframe if timeframe else mt5.TIMEFRAME_M15
+        self.bridge = bridge
+        self.timeframe = timeframe
         self.af = acceleration  # Acceleration Factor
         self.max_af = maximum   # Maximum Acceleration Factor
     
     def get_historical_data(self, bars: int = 100) -> Optional[pd.DataFrame]:
         """
-        Fetch historical price data from MT5
+        Fetch historical price data from MQL Bridge
         
         Args:
             bars: Number of bars to fetch
@@ -40,26 +37,24 @@ class ParabolicSAR:
         Returns:
             DataFrame with OHLC data or None if failed
         """
-        if not mt5.initialize():
-            print(f"❌ MT5 initialization failed")
+        if not self.bridge.is_connected():
+            print(f"❌ Bridge not connected to EA")
             return None
         
-        # Get rates from MT5
-        rates = mt5.copy_rates_from_pos(self.symbol, self.timeframe, 0, bars)
+        # Request rates from EA via bridge
+        rates_list = self.bridge.get_rates(count=bars, timeframe=self.timeframe)
         
-        if rates is None or len(rates) == 0:
+        if not rates_list:
             print(f"❌ Failed to get historical data for {self.symbol}")
-            mt5.shutdown()
             return None
         
         # Convert to DataFrame
-        df = pd.DataFrame(rates)
+        df = pd.DataFrame(rates_list)
         
-        # Convert time to datetime
+        # Convert time strings to datetime
         if 'time' in df.columns:
-            df['time'] = pd.to_datetime(df['time'], unit='s')
+            df['time'] = pd.to_datetime(df['time'])
         
-        mt5.shutdown()
         return df
     
     def calculate_sar(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -175,18 +170,11 @@ class ParabolicSAR:
         # Get current values
         current = df.iloc[-1]
         
-        # Get real-time price from MT5
-        if not mt5.initialize():
-            print("❌ MT5 initialization failed")
+        # Get real-time price from bridge
+        bid, ask = self.bridge.get_current_price()
+        
+        if bid == 0:
             return None
-        
-        tick = mt5.symbol_info_tick(self.symbol)
-        mt5.shutdown()
-        
-        if tick is None:
-            return None
-        
-        bid = tick.bid
         
         return {
             'symbol': self.symbol,
@@ -267,31 +255,39 @@ class ParabolicSAR:
 
 def main():
     """
-    Example usage of Parabolic SAR indicator with MT5
+    Example usage of Parabolic SAR indicator with MQL Bridge
     """
-    from src.symbol_detector import SymbolDetector
+    from mql_bridge import MQLBridge
     
-    print("🔮 Parabolic SAR Indicator - Real-Time Analysis (MT5)")
+    print("🔮 Parabolic SAR Indicator - Real-Time Analysis (MQL Bridge)")
     print("=" * 60)
     
-    # Initialize MT5
-    if not mt5.initialize():
-        print("❌ MT5 initialization failed")
+    # Create and start bridge
+    bridge = MQLBridge(host='127.0.0.1', port=9090)
+    if not bridge.start():
+        print("❌ Failed to start bridge")
         return
     
-    # Detect symbol
-    detector = SymbolDetector()
-    symbol = detector.detect_gold_symbol()
-    
-    if not symbol:
-        print("❌ No symbol detected")
-        mt5.shutdown()
+    # Wait for EA connection
+    if not bridge.wait_for_connection(timeout=30):
+        print("❌ No EA connection")
+        bridge.stop()
         return
+    
+    # Get symbol from market data
+    market_data = bridge.get_market_data()
+    if not market_data:
+        print("❌ No market data available")
+        bridge.stop()
+        return
+    
+    symbol = market_data.get('symbol', 'XAUUSD')
     
     # Initialize SAR indicator for current symbol on 15-minute timeframe
     sar = ParabolicSAR(
         symbol=symbol,
-        timeframe=mt5.TIMEFRAME_M15,  # 15 minutes
+        bridge=bridge,
+        timeframe=15,  # 15 minutes
         acceleration=0.02,
         maximum=0.2
     )
@@ -311,7 +307,8 @@ def main():
     
     print("\n✅ Analysis Complete")
     
-    mt5.shutdown()
+    # Stop bridge
+    bridge.stop()
 
 
 if __name__ == "__main__":

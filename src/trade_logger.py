@@ -2,7 +2,6 @@ import json
 import os
 from datetime import datetime
 from typing import Dict, List, Optional
-import MetaTrader5 as mt5
 
 class TradeLogger:
     """
@@ -27,6 +26,41 @@ class TradeLogger:
         if not os.path.exists(self.log_directory):
             os.makedirs(self.log_directory)
             print(f"📁 Created log directory: {self.log_directory}")
+    
+    def log_trade(self, symbol: str, action: str, entry_price: float,
+                  stop_loss: float, take_profit: float, lot_size: float,
+                  ticket: str, timestamp: datetime):
+        """
+        Simple trade logging (wrapper for log_trade_open).
+        
+        Args:
+            symbol: Trading symbol
+            action: BUY or SELL
+            entry_price: Entry price
+            stop_loss: Stop loss price
+            take_profit: Take profit price
+            lot_size: Position size
+            ticket: Order ticket/ID
+            timestamp: Trade timestamp
+        """
+        try:
+            # Try to convert ticket to int for order_id
+            order_id = int(ticket) if ticket.isdigit() else 0
+        except:
+            order_id = 0
+        
+        # Use log_trade_open for compatibility
+        return self.log_trade_open(
+            order_id=order_id,
+            deal_id=order_id,
+            symbol=symbol,
+            order_type=action,
+            volume=lot_size,
+            entry_price=entry_price,
+            stop_loss=stop_loss,
+            take_profit=take_profit,
+            comment=f"{action} order"
+        )
     
     def _get_daily_log_filename(self, date: Optional[datetime] = None) -> str:
         """
@@ -253,30 +287,21 @@ class TradeLogger:
     
     def _get_account_info(self) -> Dict:
         """
-        Get current account information from MT5.
+        Get account information (stub - use bridge if needed).
         
         Returns:
             Dict: Account information
         """
-        if not mt5.initialize():
-            return {}
-        
-        info = mt5.account_info()
-        if info is None:
-            mt5.shutdown()
-            return {}
-        
-        account_data = {
-            "login": info.login,
-            "balance": info.balance,
-            "equity": info.equity,
-            "currency": info.currency,
-            "server": info.server,
-            "leverage": info.leverage
+        # NOTE: Account info should come from MQL Bridge
+        # This is a stub for backward compatibility
+        return {
+            "login": "N/A",
+            "balance": 0.0,
+            "equity": 0.0,
+            "currency": "USD",
+            "server": "N/A",
+            "leverage": 0
         }
-        
-        mt5.shutdown()
-        return account_data
     
     def _format_duration(self, seconds: float) -> str:
         """

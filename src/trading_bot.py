@@ -1,18 +1,43 @@
-import MetaTrader5 as mt5
+"""
+DEPRECATED: Legacy trading bot with MetaTrader5 Python module.
+Use app_bridge.py instead for MQL Bridge implementation.
+
+NOTE: This file is kept for backward compatibility with dashboard_app.py only.
+For new development, use app_bridge.py with MQL Bridge.
+"""
 import json
 import time
 from datetime import datetime
 from typing import Optional, Dict
 
-from src.collect_account_info import collect_account_info
-from src.symbol_detector import SymbolDetector
-from src.order_executor import OrderExecutor
-from src.risk_manager import RiskManager
+try:
+    import MetaTrader5 as mt5
+    MT5_AVAILABLE = True
+except ImportError:
+    MT5_AVAILABLE = False
+    mt5 = None
+
 from src.trade_logger import TradeLogger
 from src.parabolic_sar import ParabolicSAR
 from src.email_notifier import EmailNotifier, load_email_config
 from src.web_ui.dashboard_server import DashboardServer
 from src.circuit_breaker import CircuitBreaker
+
+# Try to import legacy modules (optional for backward compatibility)
+try:
+    from src.collect_account_info import collect_account_info
+    from src.symbol_detector import SymbolDetector
+    from src.risk_manager_legacy import RiskManager
+    from src.order_executor_legacy import OrderExecutor
+    LEGACY_MODULES_AVAILABLE = True
+except ImportError as e:
+    LEGACY_MODULES_AVAILABLE = False
+    print(f"⚠️  Legacy modules not available: {e}")
+    print("   This bot requires legacy MT5 modules to function.")
+    SymbolDetector = None
+    RiskManager = None
+    OrderExecutor = None
+    collect_account_info = None
 
 
 class TradingBot:
@@ -48,8 +73,21 @@ class TradingBot:
         Returns: True if successful, False otherwise
         """
         print("=" * 60)
-        print("🏆 Gold Trading Bot - Starting...")
+        print("🏆 Gold Trading Bot - Starting (LEGACY MODE)...")
         print("=" * 60)
+        
+        # Check dependencies
+        if not MT5_AVAILABLE:
+            print("❌ MetaTrader5 module not installed")
+            print("   Run: pip install MetaTrader5")
+            return False
+        
+        if not LEGACY_MODULES_AVAILABLE:
+            print("❌ Legacy modules not available")
+            print("   Required files: collect_account_info.py, symbol_detector.py,")
+            print("                  risk_manager_legacy.py, order_executor_legacy.py")
+            print("   → Use app_bridge.py instead for MQL Bridge mode")
+            return False
         
         # Step 1: Detect gold symbol
         if not self._detect_symbol():
@@ -138,7 +176,14 @@ class TradingBot:
     def _initialize_executor(self) -> bool:
         """Initialize order executor"""
         print("[5/6] Order execution ready...")
-        self.executor = OrderExecutor(self.symbol, trade_logger=self.trade_logger)
+        try:
+            # Try legacy version (no bridge required)
+            self.executor = OrderExecutor(self.symbol, trade_logger=self.trade_logger)
+        except TypeError:
+            # New version requires bridge - create dummy bridge
+            print("⚠️  Using legacy OrderExecutor")
+            # This shouldn't happen if import worked correctly
+            return False
         print("✅ Order executor initialized")
         return True
     
@@ -375,19 +420,32 @@ class TradingBot:
         
         # Execute order
         if position_type == 'BUY':
-            result = self.executor.execute_buy_order(
-                lot_size=lot_size,
+            success = self.executor.execute_buy_order(
+                entry_price=entry_price,
                 stop_loss=sl,
                 take_profit=tp,
+                lot_size=lot_size,
                 comment=f"Gold Bot BUY - {'SAR SL' if use_sar_sl else 'Standard SL'}"
             )
         else:
-            result = self.executor.execute_sell_order(
-                lot_size=lot_size,
+            success = self.executor.execute_sell_order(
+                entry_price=entry_price,
                 stop_loss=sl,
                 take_profit=tp,
+                lot_size=lot_size,
                 comment=f"Gold Bot SELL - {'SAR SL' if use_sar_sl else 'Standard SL'}"
             )
+        
+        # Convert bool result to dict format
+        result = {
+            "success": success,
+            "order_id": "LEGACY_ORDER" if success else None,
+            "position_type": position_type,
+            "entry_price": entry_price,
+            "stop_loss": sl,
+            "take_profit": tp,
+            "lot_size": lot_size
+        }
         
         # Add metadata to result
         result["risk_info"] = risk_info
@@ -965,6 +1023,29 @@ class TradingBot:
                 "checks": check_count
             }
     
+    def has_open_positions(self) -> bool:
+        """
+        Check if there are any open positions for this symbol.
+        
+        Returns:
+            bool: True if there are open positions
+        """
+        try:
+            if not mt5.initialize():
+                return False
+            
+            positions = mt5.positions_get(symbol=self.symbol)
+            mt5.shutdown()
+            
+            if positions is None:
+                return False
+            
+            return len(positions) > 0
+            
+        except Exception as e:
+            print(f"⚠️  Error checking positions: {e}")
+            return False
+    
     def full_auto_trading_cycle(self, desired_signal: str = 'BUY',
                                 risk_percentage: float = 1.0,
                                 signal_check_interval: int = 30,
@@ -1002,6 +1083,44 @@ class TradingBot:
         
         try:
             while True:
+                # Check for existing open positions FIRST
+                if self.has_open_positions():
+                    print(f"\n⚠️  Already have an open position for {self.symbol}")
+                    
+                    # Get position details
+                    if not mt5.initialize():
+                        print("❌ Failed to initialize MT5")
+                        time.sleep(position_check_interval)
+                        continue
+                    
+                    positions = mt5.positions_get(symbol=self.symbol)
+                    mt5.shutdown()
+                    
+                    if positions and len(positions) > 0:
+                        pos = positions[0]
+                        print(f"   📊 Monitoring existing position: Ticket #{pos.ticket}")
+                        print(f"   Type: {'BUY' if pos.type == 0 else 'SELL'} | Entry: {pos.price_open} | Current P&L: ${pos.profit:.2f}")
+                        
+                        # Monitor this position with SAR trend tracking
+                        monitor_result = self.monitor_position(
+                            position_ticket=pos.ticket,
+                            stop_loss=pos.sl,
+                            take_profit=pos.tp,
+                            entry_price=pos.price_open,
+                            position_type='BUY' if pos.type == 0 else 'SELL',
+                            check_interval=position_check_interval
+                        )
+                        
+                        print(f"\n📊 Position closed: {monitor_result.get('reason', 'Unknown')}")
+                        print(f"   Continuing to next trade cycle...")
+                        time.sleep(2)
+                        continue
+                    else:
+                        # Position check said yes but no position found
+                        print("   ⚠️  Position not found, continuing...")
+                        time.sleep(position_check_interval)
+                        continue
+                
                 # Phase 1: Wait for signal
                 if desired_signal == 'BOTH':
                     print(f"\n🔍 PHASE 1: Waiting for any signal (BUY or SELL)...")
@@ -1011,6 +1130,11 @@ class TradingBot:
                 detected_signal = self.wait_for_signal(desired_signal, signal_check_interval)
                 if not detected_signal:
                     break
+                
+                # Double-check no position opened during signal wait
+                if self.has_open_positions():
+                    print(f"\n⚠️  Position opened while waiting for signal, skipping...")
+                    continue
                 
                 # Phase 2: Execute trade with the detected signal
                 print(f"\n💰 PHASE 2: Executing {detected_signal} trade...")

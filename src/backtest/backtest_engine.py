@@ -3,6 +3,11 @@ Backtesting Engine for Gold Trading Bot
 Simulates trading strategy on historical data
 """
 
+"""
+DEPRECATED: Backtest engine uses MetaTrader5 for historical data.
+This is acceptable for backtesting as it requires historical data access.
+For live trading, use app_bridge.py with MQL Bridge.
+"""
 import MetaTrader5 as mt5
 import pandas as pd
 from datetime import datetime, timedelta

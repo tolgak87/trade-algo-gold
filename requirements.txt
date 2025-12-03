@@ -1,6 +1,6 @@
-# Gold Trading Bot - Dependencies
+# Gold Trading Bot - Dependencies (MQL Bridge Version)
+# NO MetaTrader5 module required! Uses MQL Bridge instead.
 
-MetaTrader5>=5.0.45
 pandas>=2.0.0
 numpy>=1.24.0
 

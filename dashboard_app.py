@@ -1,194 +1,55 @@
 """
-Dashboard-Enabled Trading Bot Launcher
-Runs trading bot with real-time web dashboard
+DEPRECATED: This file is no longer supported.
 
-🔧 BACKTEST MODE: Set BACKTEST_MODE = True to test on historical data
+Legacy MT5 modules have been removed. Use app_bridge.py instead.
+
+Migration Guide:
+    OLD: python dashboard_app.py
+    NEW: python app_bridge.py
+
+The new MQL Bridge version provides:
+- MT4 and MT5 support
+- Better broker compatibility  
+- No MetaTrader5 Python module required
+- Uses Expert Advisor bridge for communication
+
+Setup Instructions:
+1. Copy PythonBridge_MT5.mq5 (or MT4 version) to your MT terminal
+2. Compile and attach the EA to a chart
+3. Run: python app_bridge.py
+
+For detailed instructions, see: README_BRIDGE.md
 """
 
-from src.trading_bot import TradingBot
-from src.web_ui.dashboard_server import initialize_dashboard
-from datetime import datetime, timedelta
-import time
-import json
-import os
-
-# ============================================================
-# 🎚️ TOGGLE BACKTEST MODE HERE
-# ============================================================
-BACKTEST_MODE = False  # Set to True to run backtest instead of live trading
-# ============================================================
-
-
-def load_trade_config():
-    """
-    Load trading configuration from JSON file
-    Returns config dict with trading parameters
-    """
-    # Get project root (dashboard_app.py is in project root)
-    project_root = os.path.dirname(os.path.abspath(__file__))
-    config_path = os.path.join(project_root, 'src', 'configs', 'trade_config.json')
-    
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-            print(f"✅ Loaded trading configuration from: {config_path}")
-            return config
-    except FileNotFoundError:
-        print(f"⚠️  Config file not found: {config_path}")
-        print("   Using default values...")
-        return {
-            "trading": {
-                "desired_signal": "BUY",
-                "risk_percentage": 1.0,
-                "signal_check_interval": 30,
-                "position_check_interval": 5
-            }
-        }
-    except json.JSONDecodeError as e:
-        print(f"❌ Invalid JSON in config file: {e}")
-        print("   Using default values...")
-        return {
-            "trading": {
-                "desired_signal": "BUY",
-                "risk_percentage": 1.0,
-                "signal_check_interval": 30,
-                "position_check_interval": 5
-            }
-        }
+import sys
 
 
 def main():
-    """
-    Main entry point with dashboard
-    """
-    if BACKTEST_MODE:
-        run_backtest_mode()
-    else:
-        run_live_trading_mode()
-
-
-def run_backtest_mode():
-    """
-    Run backtesting mode on historical data
-    """
-    print("\n" + "="*70)
-    print("🔬 GOLD TRADING BOT - BACKTEST MODE")
-    print("="*70)
-    
-    from src.backtest.backtest_engine import BacktestEngine
-    
-    # Backtest configuration
-    end_date = datetime.now()
-    start_date = end_date - timedelta(days=90)  # Last 3 months
-    
-    print(f"\n⚙️  Backtest Configuration:")
-    print(f"   Symbol: XAUUSD")
-    print(f"   Period: {start_date.strftime('%Y-%m-%d')} to {end_date.strftime('%Y-%m-%d')}")
-    print(f"   Strategy: Parabolic SAR (15M timeframe)")
-    print(f"   Initial Balance: $10,000")
-    print(f"   Risk per Trade: 1%")
-    print(f"   Signals: BOTH (BUY and SELL)")
-    
-    # Create and run backtest
-    engine = BacktestEngine(
-        symbol="XAUUSD",
-        initial_balance=10000.0,
-        risk_percentage=1.0
-    )
-    
-    try:
-        result = engine.run_backtest(
-            start_date=start_date,
-            end_date=end_date,
-            desired_signal='BOTH'
-        )
-        
-        # Display results
-        result.print_summary()
-        result.print_monthly_breakdown()
-        result.save_to_file()
-        
-        # Recommendations
-        print("\n💡 Next Steps:")
-        if result.return_percentage > 0:
-            print("   ✅ Strategy is profitable on historical data")
-            print("   ✅ Set BACKTEST_MODE = False in dashboard_app.py to trade live")
-        else:
-            print("   ❌ Strategy needs improvement")
-            print("   💡 Try running backtest_app.py to test different parameters")
-        
-    except Exception as e:
-        print(f"\n❌ Backtest failed: {e}")
-        import traceback
-        traceback.print_exc()
-    
-    print("\n" + "="*70)
-
-
-def run_live_trading_mode():
-    """
-    Run live trading mode with dashboard
-    """
-    print("\n" + "="*70)
-    print("🌐 GOLD TRADING BOT - LIVE TRADING MODE")
-    print("="*70)
-    
-    # Step 1: Initialize and start dashboard server
-    print("\n[Step 1/3] Starting web dashboard server...")
-    dashboard = initialize_dashboard(host='127.0.0.1', port=5000)
-    time.sleep(2)  # Give server time to start
-    
-    print(f"\n✅ Dashboard ready at: {dashboard.get_url()}")
-    print("   Open this URL in your browser to monitor trading")
-    
-    # Step 2: Initialize trading bot with dashboard
-    print("\n[Step 2/3] Initializing trading bot...")
-    bot = TradingBot(dashboard=dashboard)
-    
-    if not bot.initialize():
-        print("\n❌ Bot initialization failed. Exiting...")
-        return
-    
-    dashboard.update_bot_status("Bot initialized successfully")
-    dashboard.send_notification("Trading bot started", "success")
-    
-    # Step 3: Display status and start trading
-    print("\n[Step 3/3] Starting automated trading cycle...")
-    bot.display_status()
-    
-    # Load configuration from file
-    config = load_trade_config()
-    trading_config = config.get('trading', {})
-    
-    desired_signal = trading_config.get('desired_signal', 'BUY')
-    risk_percentage = trading_config.get('risk_percentage', 1.0)
-    signal_check_interval = trading_config.get('signal_check_interval', 30)
-    position_check_interval = trading_config.get('position_check_interval', 5)
-    
-    print(f"\n📋 Trading Configuration:")
-    print(f"   Target Signal: {desired_signal}")
-    print(f"   Risk per trade: {risk_percentage}%")
-    print(f"   Signal check: Every {signal_check_interval} seconds")
-    print(f"   Position monitoring: Every {position_check_interval} seconds")
-    print(f"\n🌐 Dashboard: {dashboard.get_url()}")
-    print(f"=" * 70)
-    
-    # Start full automated trading cycle
-    bot.full_auto_trading_cycle(
-        desired_signal=desired_signal,
-        risk_percentage=risk_percentage,
-        signal_check_interval=signal_check_interval,
-        position_check_interval=position_check_interval
-    )
+    """Display deprecation message and exit."""
+    print("=" * 70)
+    print("❌ DEPRECATED: dashboard_app.py is no longer available")
+    print("=" * 70)
+    print()
+    print("Legacy MetaTrader5 Python modules have been removed.")
+    print("Please use the new MQL Bridge version instead:")
+    print()
+    print("  → python app_bridge.py")
+    print()
+    print("Benefits of MQL Bridge:")
+    print("  ✓ Works with both MT4 and MT5")
+    print("  ✓ Better broker compatibility")
+    print("  ✓ No Python dependencies for MT5")
+    print("  ✓ Uses Expert Advisor for communication")
+    print()
+    print("Quick Setup:")
+    print("  1. Copy PythonBridge_MT5.mq5 or PythonBridge_MT4.mq4 to MT terminal")
+    print("  2. Compile and attach EA to chart")
+    print("  3. Run: python app_bridge.py")
+    print()
+    print("Documentation: README_BRIDGE.md")
+    print("=" * 70)
+    return 1
 
 
 if __name__ == "__main__":
-    try:
-        main()
-    except KeyboardInterrupt:
-        print("\n\n⚠️  Bot stopped by user")
-        print("👋 Goodbye!")
-    except Exception as e:
-        print(f"\n❌ Fatal error: {e}")
-        import traceback
-        traceback.print_exc()
+    sys.exit(main())

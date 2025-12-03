@@ -290,20 +290,13 @@ class CircuitBreaker:
         }
     
     def _get_current_balance(self) -> float:
-        """Get current account balance from MT5 or return 0 if unavailable"""
+        """Get current account balance from trade history"""
         try:
-            import MetaTrader5 as mt5
-            if mt5.initialize():
-                account_info = mt5.account_info()
-                mt5.shutdown()
-                if account_info:
-                    return account_info.balance
+            # Calculate from trade history
+            stats = self.trade_logger.get_trade_statistics()
+            return 10000.0 + stats.get('total_profit', 0)  # Assuming 10k starting balance
         except:
-            pass
-        
-        # Fallback: calculate from trade history
-        stats = self.trade_logger.get_trade_statistics()
-        return 10000.0 + stats.get('total_profit', 0)  # Assuming 10k starting balance
+            return 10000.0  # Default starting balance
     
     def _reset_pause(self):
         """Reset pause state"""
