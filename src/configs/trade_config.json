@@ -2,7 +2,7 @@
     "trading": {
         "desired_signal": "BUY",
         "risk_percentage": 1.0,
-        "signal_check_interval": 30,
+        "signal_check_interval": 5,
         "position_check_interval": 5,
         "_comments": {
             "desired_signal": "Trade direction: 'BUY' for long positions, 'SELL' for short positions, 'BOTH' for both directions",
